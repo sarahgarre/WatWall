@@ -5,3 +5,4 @@ Collection of programs to automatically irrigate a green wall using sensors, Ras
 3. WatScheduler1 : irrigation control program of Team2-Gembloux
 4. WatScheduler2 : irrigation control program of Team3-Gembloux
 
+![WatWall setup](link-to-image)
