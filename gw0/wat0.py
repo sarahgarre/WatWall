@@ -1,7 +1,7 @@
 import socket
 import os
 
-DIR_BASE = os.path.normpath("~")
+DIR_BASE = os.path.expanduser("~")
 if not os.path.samefile(os.getcwd(), DIR_BASE):
      os.chdir(DIR_BASE)
 print os.getcwd()
