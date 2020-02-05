@@ -34,16 +34,28 @@ On obtient alors un terminal en "lignes de commande" où nous avons défini des 
 * ./clean.sh  ce script arrête complètement votre programme
 * ./run.sh    ce script arrêter votre programme s'il fonctionne et le redémarre. Votre programme est en arrière plan et vous pouvez vous déconnecter.
 * ./look.sh   permet de voir ce qu'il y a dans le fichier qui sera envoyé pour le contrôle des valves (valve.txt) et les messages d'erreur éventuels de votre programme en arrière plan (nohup.out)
-* cat watX.py     (X=1, 2 ou 3) permet de voir votre programme sur le serveur.
+* cat WatWall/watX.py     (X=1, 2 ou 3) permet de voir votre programme sur le serveur.
 
 Le fichier "valve.txt" doit contenir vos commandes d'ouverture et de fermeture des vannes.
 
 Il se compose de lignes indépendantes chacune indiquant un "timestamp", un point virgule de séparation, 0 ou 1 (fermé / ouvert) et une fin de ligne ( \\n )
 
 Par exemple:
+
 > 1580906117;1
+
 > 1580906177;0
 
 Le timestamp est le nombre de secondes depuis le 01/01/1970. Il se calcule avec les fonctions du module "time".
 
-Nous vous avons mis un exemple de "watX.py" pour commencer.
+Nous vous avons mis un exemple de "WatWall/gwX/watX.py" pour commencer.
+
+# Obtenir des données des capteurs
+
+Chaque capteur a un acronyme qui l'identifie (par exemple HUM1 pour la 1ère sonde d'humidité).
+
+L'URL:
+
+> http://localhost/api/get/%21s_HUM1
+
+vous permet d'obtenir la dernière valeur lue pour ce capteur. On a mis un exemple dans votre fichier WatWall/gwX/watX.py pour vous donner une idée de comment accéder.
