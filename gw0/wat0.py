@@ -37,5 +37,5 @@ while (True):
      file("valve.txt", 'w').write(unicode(timestamp+30)+";1\n")
      #append to the file and close the valve 1 minute later
      file("valve.txt", 'a').write(unicode(timestamp+90)+";0\n")
-     #sleep for 5 minutes (in milliseconds)
-     time.sleep(5*60*1000)
+     #sleep for 5 minutes (in seconds)
+     time.sleep(5*60)
