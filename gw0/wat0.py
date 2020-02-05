@@ -1,3 +1,6 @@
+import socket
+import os
+
 # Run only ONCE: Check if /run/akuino/ELSA.pid exists...
 # pid = str(os.getpid())
 # self.pidfile = self.HardConfig.RUNdirectory+"/ELSA.pid"
