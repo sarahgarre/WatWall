@@ -34,8 +34,8 @@ def get_timestamp():
 while (True):
      timestamp = get_timestamp()
      #erase the current file and open the valve in 30 seconds
-     file("valve.txt", 'w').write(unicode(timestamp+30)+";1")
+     file("valve.txt", 'w').write(unicode(timestamp+30)+";1\n")
      #append to the file and close the valve 1 minute later
-     file("valve.txt", 'a').write(unicode(timestamp+90)+";0")
+     file("valve.txt", 'a').write(unicode(timestamp+90)+";0\n")
      #sleep for 5 minutes (in milliseconds)
      time.sleep(5*60*1000)
