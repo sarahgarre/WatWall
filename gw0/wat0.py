@@ -36,11 +36,14 @@ def get_timestamp():
 while (True):
      try:  # urlopen not usable with "with"
          url = "http://localhost/api/get/!s_HUM1"
-         data = urllib2.urlopen(url, None, 20)
+         dataFile = urllib2.urlopen(url, None, 20)
+         data = dataFile.read(80000)
          print ("HUM1="+data)
      except:
          print (u"URL=" + (url if url else "") + \
                             u", Message=" + traceback.format_exc() )
+     if dataFile:
+          dataFile.close()
      timestamp = get_timestamp()
      #erase the current file and open the valve in 30 seconds
      file("valve.txt", 'w').write(unicode(timestamp+30)+";1\n")
