@@ -50,6 +50,13 @@ Le timestamp est le nombre de secondes depuis le 01/01/1970. Il se calcule avec 
 
 Nous vous avons mis un exemple de "WatWall/gwX/watX.py" pour commencer.
 
+La commande:
+
+> ls -l -t
+
+liste vos fichiers et vous donne leur taille et leur date de modification.
+
+
 # Obtenir des données des capteurs
 
 Chaque capteur a un acronyme qui l'identifie (par exemple HUM1 pour la 1ère sonde d'humidité).
