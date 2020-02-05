@@ -34,6 +34,7 @@ def get_timestamp():
 
 # Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
 while (True):
+     dataFile = None
      try:  # urlopen not usable with "with"
          url = "http://localhost/api/get/%21s_HUM1"
          dataFile = urllib2.urlopen(url, None, 20)
