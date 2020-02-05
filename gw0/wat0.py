@@ -2,6 +2,8 @@ import socket
 import os
 import time
 import math
+import traceback
+import urllib2
 
 # Ensure to run in the user home directory
 DIR_BASE = os.path.expanduser("~")
@@ -32,6 +34,13 @@ def get_timestamp():
 
 # Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
 while (True):
+     try:  # urlopen not usable with "with"
+         url = "http://localhost/api/get/!s_HUM1"
+         data = urllib2.urlopen(url, None, 20)
+         print ("HUM1="+data)
+     except:
+         print (u"URL=" + (url if url else "") + \
+                            u", Message=" + traceback.format_exc() )
      timestamp = get_timestamp()
      #erase the current file and open the valve in 30 seconds
      file("valve.txt", 'w').write(unicode(timestamp+30)+";1\n")
