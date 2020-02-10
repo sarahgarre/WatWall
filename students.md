@@ -37,8 +37,8 @@ You then get a "command line" terminal. To do things, you must type a command an
 The file "valve.dat" must contain your commands to open and close the valves.
 It is composed of independent lines each indicating a timestamp, a separating semicolon, 0 or 1 (closed / open) and an end of line ( \n ).
 For example:
-> 1580906117;1
-> 1580906177;0
+* > 1580906117;1
+* > 1580906177;0
 The timestamp is the number of seconds since 01/01/1970. It is calculated with the functions of the "time" module.
 
 We put an example of "WatWall/gwX/watX.py" to get you started in your corresponding team folder. It is here you have to make calculations based on the data and make decisions to irrigate.
