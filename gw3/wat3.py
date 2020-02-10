@@ -1,6 +1,7 @@
 import socket
 import os
 import time
+import datetime
 import math
 import traceback
 import urllib2
@@ -35,7 +36,8 @@ def get_timestamp():
 
 #Transform an EPOCH time in a lisible date (for Grafana)
 def formatDate(epoch):
-    return time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(epoch))
+    dt = datetime.datetime.fromtimestamp(epoch)
+    return dt.isoformat()
 
 delimiters = ' \t\n\r\"\''
 
@@ -69,15 +71,15 @@ while (True):
      if dataFile:
           dataFile.close()
 
-     # Example reading values of the last hour (60 minutes of 60 seconds)
+     # Example reading all values of the last hour (60 minutes of 60 seconds)
      dataFile = None
      try:  # urlopen not usable with "with"
          url = "http://localhost/api/grafana/query"
          now = get_timestamp()
-         gr = { 'range': { 'from': formatDate(now-60*60), 'to': formatDate(now) }, \
-                'targets': [{'target':'HUM1'} ,{'target':'HUM2'},{'target':'HUM3'}] }
+         gr = { 'range': { 'from': formatDate(now-2*60*60), 'to': formatDate(now-60*60) }, \
+                'targets': [{'target':'HUM1'} ,{'target':'HUM2'},{'target':'HUM3'} ] }
          data = json.dumps(gr)
-         # print data
+         print data
          dataFile = urllib2.urlopen(url, data, 20)
          result = json.load(dataFile)
          if result:
@@ -87,8 +89,8 @@ while (True):
                  index = target.get('target')
                  for datapoint in target.get('datapoints'):
                      value = datapoint[0]
-                     stamp = datapoint[1]
-                     print (index+": "+formatDate(stamp)+" = "+value)
+                     stamp = datapoint[1]/1000
+                     print (index+": "+formatDate(stamp)+" = "+unicode(value))
      except:
          print (u"URL=" + (url if url else "") + \
                             u", Message=" + traceback.format_exc() )

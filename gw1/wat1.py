@@ -76,7 +76,7 @@ while (True):
      try:  # urlopen not usable with "with"
          url = "http://localhost/api/grafana/query"
          now = get_timestamp()
-         gr = { 'range': { 'from': formatDate(now-60*60), 'to': formatDate(now) }, \
+         gr = { 'range': { 'from': formatDate(now-2*60*60), 'to': formatDate(now-60*60) }, \
                 'targets': [{'target':'HUM1'} ,{'target':'HUM2'},{'target':'HUM3'} ] }
          data = json.dumps(gr)
          print data
