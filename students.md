@@ -1,68 +1,56 @@
-# Programmation de la gestion de l'irrigation
+# Program architecture WatWall
 
-On a deux ordinateurs:
-* un local qui collecte les données du terrain
-* un serveur (virtuel) de l'université où les données sont recopiées et qui permet d'exécuter des programmes décidant quand il faut arroser
+We have 2 computers
+* a local computer that collects the data (AKUINO with ELSA-local)
+* a (virtual) university server on which we copy the data and which allows to execute programs making decisions on when to irrigate (with ELSA - central & a wat1/2/3.py program)
 
-Selon que vous êtes du groupe 1, 2 ou 3, vous vous intéressez aux fichiers et répertoires dont le nom se termine par 1, 2 ou 3.
 
-Dans GitHubn sarahgarre/WatWall/gw2, par exemple, le groupe 2 mettra son programme Python dans le fichier wat2.py . Un embryon est déjà là:
-ne pas l'abîmer car il assure que votre programme ne fonctionne qu'à un exemplaire et peut être arrếté au besoin.
+Depending on whether you are in group 1, 2 or 3, you are interested in files and directories ending with 1, 2 or 3.
+In GitHub sarahgarre/WatWall/gw2, for example, group 2 will put their Python program in the wat2.py file. An dummy file to start from is already there.Do not remove existing code in this dummy, as it ensures that your program only works in one copy and can be stopped if needed.
 
-# Branchement au serveur greenwall.gembloux.uliege.be
+# Connection to the server 
+[Link to server](http://greenwall.gembloux.uliege.be)
 
-On a défini trois utilisateurs (gw1, gw2, gw3) avec leur mot de passe. Le branchement se fait avec tout ordinateur doté d'un logiciel "rsh" (par exemple PuTTY sous Windows, rsh sous Linux).
+Three users (gw1, gw2, gw3) have been defined with their passwords. The connection is made with any computer with "rsh" software (e.g. PuTTY under Windows, rsh under Linux). You can download and install Putty [here](https://www.putty.org/).
 
-On se branche au serveur, par exemple:
+To connect to the server, launch Putty and type: 
 
 > rsh gw2@greenwall.gembloux.uliege.be
 
-et on donne son mot de passe (communiqué séparément par votre professeur)
+Then give your password (as sent to each group by the teacher).
 
-# Création de votre programme
+# Creation of your scheduling program wat1/2/3.py
 
-Votre programme doit être en langage Python et se nommer watX.py (X=1, 2 ou 3)
+Your program must be in written Python and named watX.py (X=1, 2 or 3)
+It must be pushed to the GitHub project sarahgarre/WatWall/gwX project (X=1, 2 or 3) in the corresponding team folder (gwx). This can be done for example by connecting to your GitHub account through PyCharm. 
 
-Il faut le mettre dans le projet GitHub sarahgarre/WatWall/gwX  (X=1, 2 ou 3).
+# Execution of your program
 
-L'utilisation de GitHub vous sera montrée lors du Workshop: amenez votre ordinateur portable pour qu'on puisse vous aider à démarrer.
+You then get a "command line" terminal. To do things, you must type a command and then press enter. For example: 
 
-# Exécution de votre programme
+* `./upd.sh` this script allows to bring back ALL the modifications of ALL the groups from GitHub.
+* `./clean.sh` this script stops your program completely.
+* `./run.sh` this script will stop your program if it works and restart it. Your program is in the background and you can log out.
+* `./look.sh` allows you to see what's in the file that will be sent for valve control (valve.dat) and any error messages from your program in the background (nohup.out).
+* `cat WatWall/watX.py` (X=1, 2 or 3) allows you to view your program on the server.
 
-On obtient alors un terminal en "lignes de commande" où nous avons défini des commandes pour vous simplifier la vie:
-* ./upd.sh    ce script permet de ramener TOUTES les modifications de TOUS les groupes depuis GitHub.
-* ./clean.sh  ce script arrête complètement votre programme
-* ./run.sh    ce script arrêter votre programme s'il fonctionne et le redémarre. Votre programme est en arrière plan et vous pouvez vous déconnecter.
-* ./look.sh   permet de voir ce qu'il y a dans le fichier qui sera envoyé pour le contrôle des valves (valve.txt) et les messages d'erreur éventuels de votre programme en arrière plan (nohup.out)
-* cat WatWall/watX.py     (X=1, 2 ou 3) permet de voir votre programme sur le serveur.
-
-Le fichier "valve.txt" doit contenir vos commandes d'ouverture et de fermeture des vannes.
-
-Il se compose de lignes indépendantes chacune indiquant un "timestamp", un point virgule de séparation, 0 ou 1 (fermé / ouvert) et une fin de ligne ( \\n )
-
-Par exemple:
-
+The file "valve.dat" must contain your commands to open and close the valves.
+It is composed of independent lines each indicating a timestamp, a separating semicolon, 0 or 1 (closed / open) and an end of line ( \n ).
+For example:
 > 1580906117;1
-
 > 1580906177;0
+The timestamp is the number of seconds since 01/01/1970. It is calculated with the functions of the "time" module.
 
-Le timestamp est le nombre de secondes depuis le 01/01/1970. Il se calcule avec les fonctions du module "time".
+We put an example of "WatWall/gwX/watX.py" to get you started in your corresponding team folder. It is here you have to make calculations based on the data and make decisions to irrigate.
 
-Nous vous avons mis un exemple de "WatWall/gwX/watX.py" pour commencer.
-
-La commande:
-
-> ls -l -t
-
-liste vos fichiers et vous donne leur taille et leur date de modification.
+The command:
+`> ls -l -t`
+lists your files and gives you their size and modification date.
 
 
-# Obtenir des données des capteurs
+# Obtain data from the sensors connected to your AKUINO central
+Each sensor has a specific name (e.g. HUM1 for the 1st humidity sensor).
 
-Chaque capteur a un acronyme qui l'identifie (par exemple HUM1 pour la 1ère sonde d'humidité).
-
-L'URL:
-
-> http://localhost/api/get/%21s_HUM1
-
-vous permet d'obtenir la dernière valeur lue pour ce capteur. On a mis un exemple dans votre fichier WatWall/gwX/watX.py pour vous donner une idée de comment accéder.
+The URL:
+`> http://localhost/api/get/%21s_HUM1`
+allows you to obtain the last value read for this sensor. We put an example in your WatWall/gwX/watX.py file to give you an idea of how to access.
