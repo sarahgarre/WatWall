@@ -35,7 +35,7 @@ def get_timestamp():
 
 #Transform an EPOCH time in a lisible date (for Grafana)
 def formatDate(epoch):
-    return time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(epoch))
+    return time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime(epoch))
 
 delimiters = ' \t\n\r\"\''
 
