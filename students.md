@@ -54,3 +54,8 @@ Each sensor has a specific name (e.g. HUM1 for the 1st humidity sensor).
 The URL:
 `> http://localhost/api/get/%21s_HUM1`
 allows you to obtain the last value read for this sensor. We put an example in your WatWall/gwX/watX.py file to give you an idea of how to access.
+
+# Testing...
+
+The program now can be in "test mode" (look at line setting variable "test" at True). This means it can then run on your local computer (and not in the server).
+Before committing to GitHub (and pulling to the server), DO NOT forget to set " test = False " !
