@@ -1,5 +1,5 @@
-# test de transfert sur GitHub
-#test github
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import socket
 import os
