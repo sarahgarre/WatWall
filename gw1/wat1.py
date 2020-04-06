@@ -70,6 +70,28 @@ if dataFile:
 # Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
 while (True):
 
+    # Calcul de l'ETP du jour précédent à partir de certaines des données de la station météo sur les dernières 24h
+    dataFile = None
+    liste = [0,7,4,8,10,9]
+    ETP = 0
+    meteo = []
+    for g in range(0,1440):
+        for k in liste:
+            try:  # urlopen not usable with "with"
+                url = "http://" + host + "/api/get/%21s_SID"+ k
+                dataFile = urllib.urlopen(url, None, 20)
+                data = dataFile.read(80000-g)
+                meteo = meteo.append(data.strip(delimiters))
+            except:
+                print(u"URL=" + (url if url else "") + \
+                    u", Message=" + traceback.format_exc())
+            if dataFile:
+                dataFile.close()
+        print(meteo)
+        ETP+= " ajout de l'ETP pour g minutes avant maintenant pas encore mis le calcul "
+        meteo = []
+
+
     # Example reading last sensor value
     dataFile = None
     try:  # urlopen not usable with "with"
@@ -116,5 +138,5 @@ while (True):
     open("valve.txt", 'a').write(str(timestamp + 90) + ";0\n")
     print("valve.txt ready.")
     # sleep for 5 minutes (in seconds)
-    time.sleep(5 * 60)
+    time.sleep(5*60)
 
