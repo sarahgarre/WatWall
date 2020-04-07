@@ -1,12 +1,13 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-import datetime
+from datetime import datetime
+import time
+import calendar
 import json
 import math
 import os,sys
 import socket
-import time
 import traceback
 import urllib2 as urllib
 
@@ -37,18 +38,18 @@ else:
         print(user+' lock exists for process #' + current + " : may be you should ./clean.sh !")
         sys.exit()
 
-
 # EPOCH time is the number of seconds since 1/1/1970
 def get_timestamp():
-    now = time.time()
-    now = math.floor(float(now))
-    now = int(now)
-    return now
-
+    return int(time.time())
 
 # Transform an EPOCH time in a lisible date (for Grafana)
 def formatDate(epoch):
-    dt = datetime.datetime.fromtimestamp(epoch)
+    dt = datetime.fromtimestamp(epoch)
+    return dt.isoformat()
+
+# Transform an EPOCH time in a lisible date (for Grafana)
+def formatDateGMT(epoch):
+    dt = datetime.fromtimestamp(epoch - (2 * 60 * 60) ) # We are in summer and in Belgium !
     return dt.isoformat()
 
 delimiters = ' \t\n\r\"\''
@@ -88,7 +89,7 @@ while (True):
     try:  # urlopen not usable with "with"
         url = "http://" +host +"/api/grafana/query"
         now = get_timestamp()
-        gr = {'range': {'from': formatDate(now - 2 * 60 * 60), 'to': formatDate(now - 60 * 60)}, \
+        gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
               'targets': [{'target': 'HUM1'}, {'target': 'HUM2'}, {'target': 'HUM3'}]}
         data = json.dumps(gr)
         print(data)
