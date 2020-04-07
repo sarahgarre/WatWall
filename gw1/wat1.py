@@ -161,7 +161,7 @@ while (True):
             dataFile.close()
     print(humidite)
 
-    # Quel volume doit-on irriguer ?
+    # Volume à irriguer
     limite1 = "à calculer"
     limite2 = "à calculer"
     volume_mur = "à calculer"
