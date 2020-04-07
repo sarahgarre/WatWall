@@ -11,6 +11,7 @@ import socket
 import traceback
 import urllib2 as urllib
 
+
 user = "GW1"
 test = True
 
@@ -72,7 +73,6 @@ if dataFile:
 while (True):
 
     # Receuil des données météo de l'heure précédente et nécessaires au calcul de l'ETP
-
     dataFile = None
     meteo = [[] for i in range(6)]
     j = 0
@@ -86,7 +86,6 @@ while (True):
         result = json.load(dataFile)
         if result:
             for target in result:
-                # print target
                 index = target.get('target')
                 for datapoint in target.get('datapoints'):
                     value = datapoint[0]
@@ -100,12 +99,53 @@ while (True):
     if dataFile:
         dataFile.close()
 
-    # Calcul de l'ETP de l'heure précédente
+    #Recueil des données de température sur les dernières 24h afin de calculer la température moyenne durant les dernières 24h
+    dataFile = None
+    temperature = []
+    try:  # urlopen not usable with "with"
+        url = "http://" + host + "/api/grafana/query"
+        now = get_timestamp()
+        gr = {'range': {'from': formatDateGMT(now - (24 * 60 * 60)), 'to': formatDateGMT(now)}, \
+              'targets': [{'target': 'SDI7'}]}
+        data = json.dumps(gr)
+        dataFile = urllib.urlopen(url, data, 20)
+        result = json.load(dataFile)
+        if result:
+            for target in result:
+                index = target.get('target')
+                for datapoint in target.get('datapoints'):
+                    value = datapoint[0]
+                    stamp = datapoint[1] / 1000
+                    temperature.append(float(value))
+            print(temperature)
+    except:
+        print(u"URL=" + (url if url else "") + \
+              u", Message=" + traceback.format_exc())
+    if dataFile:
+        dataFile.close()
 
-    "à faire"
+    moyenne_temperature=math.fsum(temperature)/len(temperature)
+    print(moyenne_temperature)
+
+    # Calcul de l'ETP de l'heure précédente
+    ET0 = 0
+    Kc = 0.7
+    v=[]
+    for i in range(0, len(meteo)):
+        v.append(len(meteo[i]))
+    for q in range(0,min(v)):
+        delta = (4098*(0.6108*math.exp((17.27*meteo[2][q])/(meteo[2][q]+237.3))))/((meteo[2][q]+237.3)**2)
+        Rn = meteo[0][q]*10**(-6)/1440
+        gamma = 0.665*meteo[4][q]*10**(-3)
+        vitesse_du_vent = meteo[1][q]
+        es = 100*meteo[3][q]/meteo[5][q]
+        ea = meteo[3][q]
+        ET0+=(0.408*delta*Rn+gamma*(900/(273+moyenne_temperature))*vitesse_du_vent*(es-ea))/(delta+gamma*(1+0.34*vitesse_du_vent))
+    print(ET0)
+    ETR = ET0 * Kc
+    print(ETR)
 
     # Recueil des dernières valeurs d'humidité
-
     dataFile = None
     humidite = []
     for g in range(1,4):
@@ -114,13 +154,32 @@ while (True):
             dataFile = urllib.urlopen(url, None, 20)
             data = dataFile.read(80000)
             humidite.append(float(data.strip(delimiters)))
-            print("HUM"+unicode(g)+"=" + data.strip(delimiters))
         except:
             print(u"URL=" + (url if url else "") + \
                 u", Message=" + traceback.format_exc())
         if dataFile:
             dataFile.close()
     print(humidite)
+
+    # Quel volume doit-on irriguer ?
+    limite1 = "à calculer"
+    limite2 = "à calculer"
+    volume_mur = "à calculer"
+
+    if humidite>limite1:
+        V_irrigation= "à calculer"
+    else:
+        if humidite<limite2:
+            V_irrigation = "à calculer"
+        else:
+            V_irrigation = "à calculer"
+    temps_irrigation = V_irrigation/"débit total(L/s)"
+    if temps_irrigation<1200:
+        timestamp = get_timestamp()
+        open("valve.txt", 'a').write(str(timestamp) + ";1\n")
+        open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n")
+        print("valve.txt ready.")
+        time.sleep(60 * 60)
 
     # Example reading all values of the last hour (60 minutes of 60 seconds)
     dataFile = None
