@@ -1,12 +1,13 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-import datetime
+from datetime import datetime
+import time
+import calendar
 import json
 import math
 import os,sys
 import socket
-import time
 import traceback
 import urllib2 as urllib
 
@@ -37,18 +38,18 @@ else:
         print(user+' lock exists for process #' + current + " : may be you should ./clean.sh !")
         sys.exit()
 
-
 # EPOCH time is the number of seconds since 1/1/1970
 def get_timestamp():
-    now = time.time()
-    now = math.floor(float(now))
-    now = int(now)
-    return now
-
+    return int(time.time())
 
 # Transform an EPOCH time in a lisible date (for Grafana)
 def formatDate(epoch):
-    dt = datetime.datetime.fromtimestamp(epoch)
+    dt = datetime.fromtimestamp(epoch)
+    return dt.isoformat()
+
+# Transform an EPOCH time in a lisible date (for Grafana)
+def formatDateGMT(epoch):
+    dt = datetime.fromtimestamp(epoch - (2 * 60 * 60) ) # We are in summer and in Belgium !
     return dt.isoformat()
 
 delimiters = ' \t\n\r\"\''
@@ -70,47 +71,63 @@ if dataFile:
 # Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
 while (True):
 
-    # Calcul de l'ETP du jour précédent à partir de certaines des données de la station météo sur les dernières 24h
-    dataFile = None
-    liste = [0,7,4,8,10,9]
-    ETP = 0
-    meteo = []
-    for g in range(0,1440):
-        for k in liste:
-            try:  # urlopen not usable with "with"
-                url = "http://" + host + "/api/get/%21s_SID"+ k
-                dataFile = urllib.urlopen(url, None, 20)
-                data = dataFile.read(80000-g)
-                meteo = meteo.append(data.strip(delimiters))
-            except:
-                print(u"URL=" + (url if url else "") + \
-                    u", Message=" + traceback.format_exc())
-            if dataFile:
-                dataFile.close()
-        print(meteo)
-        ETP+= " ajout de l'ETP pour g minutes avant maintenant pas encore mis le calcul "
-        meteo = []
+    # Receuil des données météo de l'heure précédente et nécessaires au calcul de l'ETP
 
-
-    # Example reading last sensor value
     dataFile = None
+    meteo = [[] for i in range(6)]
+    j = 0
     try:  # urlopen not usable with "with"
-        url = "http://" +host +"/api/get/%21s_HUM1"
-        dataFile = urllib.urlopen(url, None, 20)
-        data = dataFile.read(80000)
-        print("HUM1=" + data.strip(delimiters))
+        url = "http://" + host + "/api/grafana/query"
+        now = get_timestamp()
+        gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
+              'targets': [{'target': 'SDI0'}, {'target': 'SDI4'}, {'target': 'SDI7'},{'target': 'SDI8'},{'target': 'SDI9'},{'target': 'SDI10'},]}
+        data = json.dumps(gr)
+        dataFile = urllib.urlopen(url, data, 20)
+        result = json.load(dataFile)
+        if result:
+            for target in result:
+                # print target
+                index = target.get('target')
+                for datapoint in target.get('datapoints'):
+                    value = datapoint[0]
+                    stamp = datapoint[1] / 1000
+                    meteo[j].append(float(value))
+                j+=1
+            print(meteo)
     except:
         print(u"URL=" + (url if url else "") + \
-              u", Message=" + traceback.format_exc())
+                u", Message=" + traceback.format_exc())
     if dataFile:
         dataFile.close()
+
+    # Calcul de l'ETP de l'heure précédente
+
+    "à faire"
+
+    # Recueil des dernières valeurs d'humidité
+
+    dataFile = None
+    humidite = []
+    for g in range(1,4):
+        try:  # urlopen not usable with "with"
+            url = "http://" + host + "/api/get/%21s_HUM"+unicode(g)
+            dataFile = urllib.urlopen(url, None, 20)
+            data = dataFile.read(80000)
+            humidite.append(float(data.strip(delimiters)))
+            print("HUM"+unicode(g)+"=" + data.strip(delimiters))
+        except:
+            print(u"URL=" + (url if url else "") + \
+                u", Message=" + traceback.format_exc())
+        if dataFile:
+            dataFile.close()
+    print(humidite)
 
     # Example reading all values of the last hour (60 minutes of 60 seconds)
     dataFile = None
     try:  # urlopen not usable with "with"
         url = "http://" +host +"/api/grafana/query"
         now = get_timestamp()
-        gr = {'range': {'from': formatDate(now - 2 * 60 * 60), 'to': formatDate(now - 60 * 60)}, \
+        gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
               'targets': [{'target': 'HUM1'}, {'target': 'HUM2'}, {'target': 'HUM3'}]}
         data = json.dumps(gr)
         print(data)
@@ -131,6 +148,19 @@ while (True):
     if dataFile:
         dataFile.close()
 
+    # Example reading last sensor value
+    dataFile = None
+    try:  # urlopen not usable with "with"
+        url = "http://" + host + "/api/get/%21s_HUM1"
+        dataFile = urllib.urlopen(url, None, 20)
+        data = dataFile.read(80000)
+        print("HUM1=" + data.strip(delimiters))
+    except:
+        print(u"URL=" + (url if url else "") + \
+                u", Message=" + traceback.format_exc())
+    if dataFile:
+        dataFile.close()
+
     timestamp = get_timestamp()
     # erase the current file and open the valve in 30 seconds
     open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
@@ -138,5 +168,5 @@ while (True):
     open("valve.txt", 'a').write(str(timestamp + 90) + ";0\n")
     print("valve.txt ready.")
     # sleep for 5 minutes (in seconds)
-    time.sleep(5*60)
+    time.sleep(5 * 60)
 
