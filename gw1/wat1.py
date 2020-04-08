@@ -141,7 +141,6 @@ while (True):
         es = 100*meteo[3][q]/meteo[5][q]
         ea = meteo[3][q]
         ET0+=(0.408*delta*Rn+gamma*(900/(273+moyenne_temperature))*vitesse_du_vent*(es-ea))/(delta+gamma*(1+0.34*vitesse_du_vent))
-    print(ET0)
     ETR = ET0 * Kc
     print(ETR)
 
@@ -173,6 +172,8 @@ while (True):
             V_irrigation = "à calculer"
         else:
             V_irrigation = "à calculer"
+
+    #Planning d'irrigation
     temps_irrigation = V_irrigation/"débit total(L/s)"
     if temps_irrigation<1200:
         timestamp = get_timestamp()
