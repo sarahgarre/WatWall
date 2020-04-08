@@ -92,7 +92,6 @@ while (True):
                     stamp = datapoint[1] / 1000
                     meteo[j].append(float(value))
                 j+=1
-            print(meteo)
     except:
         print(u"URL=" + (url if url else "") + \
                 u", Message=" + traceback.format_exc())
@@ -117,7 +116,6 @@ while (True):
                     value = datapoint[0]
                     stamp = datapoint[1] / 1000
                     temperature.append(float(value))
-            print(temperature)
     except:
         print(u"URL=" + (url if url else "") + \
               u", Message=" + traceback.format_exc())
@@ -125,7 +123,7 @@ while (True):
         dataFile.close()
 
     moyenne_temperature=math.fsum(temperature)/len(temperature)
-    print(moyenne_temperature)
+    print("La température moyenne sur les 24 précédentes heures est de"+" "+str(moyenne_temperature)+"°C")
 
     # Calcul de l'ETP de l'heure précédente
     ET0 = 0
@@ -142,7 +140,7 @@ while (True):
         ea = meteo[3][q]
         ET0+=(0.408*delta*Rn+gamma*(900/(273+moyenne_temperature))*vitesse_du_vent*(es-ea))/(delta+gamma*(1+0.34*vitesse_du_vent))
     ETR = ET0 * Kc
-    print(ETR)
+    print("L'ETR est de"+" "+str(ETR))
 
     # Recueil des dernières valeurs d'humidité
     dataFile = None
@@ -158,7 +156,7 @@ while (True):
                 u", Message=" + traceback.format_exc())
         if dataFile:
             dataFile.close()
-    print(humidite)
+    print("Les dernières valeurs d'humidité sont respectivement de"+" "+str(humidite[0])+" pour le 1er capteur,"+" "+str(humidite[1])+""+" pour le second"+" et de"+" "+str(humidite[2])+" pour le dernier")
 
     # Volume à irriguer
     limite1 = "à calculer"
