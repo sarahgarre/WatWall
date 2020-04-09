@@ -133,11 +133,16 @@ while (True):
         v.append(len(meteo[i]))
     for q in range(0,min(v)):
         delta = (4098*(0.6108*math.exp((17.27*meteo[2][q])/(meteo[2][q]+237.3))))/((meteo[2][q]+237.3)**2)
-        Rn = meteo[0][q]*10**(-6)/1440
+        es = 100 * meteo[3][q] / meteo[5][q]
+        ea = meteo[3][q]
+        altitude = 150 #au hasard, a demander, pas hyper important en belgique ca va pas varier de ouf
+        Rs = meteo[0][q] * 10 ** (-6) * 60
+        Rns = (1-0.2)*Rs
+        Ra = (60/3.14)*0.082*dr*(ws*math.sin(50)*math.sin(declinaison)+math.sin(ws)*math.cos(50)*math.cos(declinaison)) # on va s amuser ahaha...
+        Rso=(0.75+210**(-5)*altitude)*Ra
+        Rnl = sigma*meteo[2][q]*(0.34*0.14*ea**0.5)*(1.35*(Rs/Rso)-0.35)
         gamma = 0.665*meteo[4][q]*10**(-3)
         vitesse_du_vent = meteo[1][q]
-        es = 100*meteo[3][q]/meteo[5][q]
-        ea = meteo[3][q]
         ET0+=(0.408*delta*Rn+gamma*(900/(273+moyenne_temperature))*vitesse_du_vent*(es-ea))/(delta+gamma*(1+0.34*vitesse_du_vent))
     ETR = ET0 * Kc
     print("L'ETR est de"+" "+str(ETR))
