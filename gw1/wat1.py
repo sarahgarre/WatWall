@@ -132,9 +132,9 @@ while (True):
     for i in range(0, len(meteo)):
         v.append(len(meteo[i]))
     for q in range(0,min(v)):
-        delta = (4098*(0.6108*math.exp((17.27*meteo[2][q])/(meteo[2][q]+237.3))))/((meteo[2][q]+237.3)**2)
-        es = 100 * meteo[3][q] / meteo[5][q]
-        ea = meteo[3][q]
+        delta = (4098*(0.6108*math.exp((17.27*meteo[2][q])/(meteo[2][q]+237.3))))/((meteo[2][q]+237.3)**2) #ok
+        es = 100 * meteo[3][q] / meteo[5][q] #ok
+        ea = meteo[3][q] #ok
         altitude = 150 #au hasard, a demander, pas hyper important en belgique ca va pas varier de ouf
         albedo = 0.2
         Rs = meteo[0][q] * 10 ** (-6) * 60
@@ -146,12 +146,13 @@ while (True):
         declinaison = 0.409 * math.sin((6.28/365)*J-1.39)
         ws = math.acos(-math.tan(lat)*math.tan(declinaison))
         Ra = (60/3.14)*0.082*dr*(ws*math.sin(lat)*math.sin(declinaison)+math.sin(ws)*math.cos(lat)*math.cos(declinaison)) # on va s amuser ahaha...
-        Rso=(0.75+210**(-5)*altitude)*Ra
+        Rso = (0.75+210**(-5)*altitude)*Ra
         Rnl = sigma*meteo[2][q]+273.15*(0.34*0.14*ea**0.5)*(1.35*(Rs/Rso)-0.35) #ici temperature en kelvin
-        Rn=Rns-Rnl
+        Rn = Rns-Rnl
         gamma = 0.665*meteo[4][q]*10**(-3)
         vitesse_du_vent = meteo[1][q]
-        ET0+=(0.408*delta*Rn+gamma*(900/(273+meteo[2][q]))*vitesse_du_vent*(es-ea))/(delta+gamma*(1+0.34*vitesse_du_vent))
+        #essayons deja sans prendre les longwave
+        ET0 += (0.408*delta*Rns+gamma*(0.625/(273+meteo[2][q]))*vitesse_du_vent*(es-ea))/(delta+gamma*(1+0.34*vitesse_du_vent))
     ETR = ET0 * Kc
     print("L'ETR est de"+" "+str(ETR))
 
