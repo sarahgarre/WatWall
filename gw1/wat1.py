@@ -151,6 +151,7 @@ while (True):
         Rn = Rns-Rnl
         gamma = 0.665*meteo[4][q]*10**(-3)
         vitesse_du_vent = meteo[1][q]
+        #essayons deja sans prendre les longwave
         ET0 += (0.408*delta*Rns+gamma*(0.625/(273+meteo[2][q]))*vitesse_du_vent*(es-ea))/(delta+gamma*(1+0.34*vitesse_du_vent))
     ETR = ET0 * Kc
     print("L'ETR est de"+" "+str(ETR))
