@@ -147,12 +147,12 @@ while (True):
         ws = math.acos(-math.tan(lat)*math.tan(declinaison))
         Ra = (60/3.14)*0.082*dr*(ws*math.sin(lat)*math.sin(declinaison)+math.sin(ws)*math.cos(lat)*math.cos(declinaison)) # on va s amuser ahaha...
         Rso = (0.75+210**(-5)*altitude)*Ra
-        Rnl = sigma*meteo[2][q]+273.15*(0.34*0.14*ea**0.5)*(1.35*(Rs/Rso)-0.35) #ici temperature en kelvin
+        Rnl = sigma*(meteo[2][q]+273.15)*(0.34*0.14*ea**0.5)*(1.35*(Rs/Rso)-0.35) #ici temperature en kelvin
         Rn = Rns-Rnl
         gamma = 0.665*meteo[4][q]*10**(-3)
         vitesse_du_vent = meteo[1][q]
         #essayons deja sans prendre les longwave
-        ET0 += (0.408*delta*Rns+gamma*(0.625/(273+meteo[2][q]))*vitesse_du_vent*(es-ea))/(delta+gamma*(1+0.34*vitesse_du_vent))
+        ET0 += (0.408*delta*Rn+gamma*(0.625/(273+meteo[2][q]))*vitesse_du_vent*(es-ea))/(delta+gamma*(1+0.34*vitesse_du_vent))
     ETR = ET0 * Kc
     print("L'ETR est de"+" "+str(ETR))
 
@@ -185,14 +185,15 @@ while (True):
         else:
             V_irrigation = "à calculer"
 
-    #Planning d'irrigation
-    temps_irrigation = V_irrigation/"débit total(L/s)"
-    if temps_irrigation<1200:
-        timestamp = get_timestamp()
-        open("valve.txt", 'a').write(str(timestamp) + ";1\n")
-        open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n")
-        print("valve.txt ready.")
-        time.sleep(60 * 60)
+    # Planning d'irrigation
+    temps_irrigation = "V_irrigation/débit total(L/s)"
+    if temps_irrigation>1200:
+        temps_irrigation = 1200
+
+    timestamp = get_timestamp()
+    open("valve.txt", 'a').write(str(timestamp) + ";1\n")
+    open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n")
+    time.sleep(60 * 60)
 
     # Example reading all values of the last hour (60 minutes of 60 seconds)
     dataFile = None
