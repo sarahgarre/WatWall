@@ -90,7 +90,7 @@ while (True):
         url = "http://" +host +"/api/grafana/query"
         now = get_timestamp()
         gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
-              'targets': [{'target': 'HUM1'}, {'target': 'HUM2'}, {'target': 'HUM3'}]}
+              'targets': [{'target': 'HUM3'}, {'target': 'HUM4'}, {'target': 'HUM5'}]}
         data = json.dumps(gr)
         print(data)
         dataFile = urllib.urlopen(url, data, 20)
