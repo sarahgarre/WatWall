@@ -110,6 +110,14 @@ while (True):
     if dataFile:
         dataFile.close()
 
+    # calcul test pour trouver la valeur moyenne de HUM3 dans la dernière heure
+    som = 0
+    length_result = len(result[0].get('datapoints'))
+    for i in range(0, length_result):
+        som = som + result[0].get('datapoints')[i][0]
+    average = som/length_result
+    print average
+
     timestamp = get_timestamp()
     # erase the current file and open the valve in 30 seconds
     open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")

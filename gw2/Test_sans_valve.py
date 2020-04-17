@@ -109,5 +109,20 @@ while (True):
               u", Message=" + traceback.format_exc())
     if dataFile:
         dataFile.close()
+# calcul test pour trouver la valeur moyenne de HUM3 dans la dernière heure
+som = 0
+length_result = len(result[0].get('datapoints'))
+for i in range(0,length_result):
+    som = som + result[0].get('datapoints')[i][0]
+average = som/length_result = len(result[0].get('datapoints'))
+print average
 
+timestamp = get_timestamp()
+# erase the current file and open the valve in 30 seconds
+open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
+# append to the file and close the valve 1 minute later
+open("valve.txt", 'a').write(str(timestamp + 90) + ";0\n")
+print("valve.txt ready.")
+# sleep for 5 minutes (in seconds)
+time.sleep(5 * 60)
 
