@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
+# test sync !
+
 from datetime import datetime
 import time
 import calendar
@@ -71,6 +73,7 @@ if dataFile:
 # Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
 while (True):
 
+    print("test printing bullshit")
     # Example reading last sensor value
     dataFile = None
     try:  # urlopen not usable with "with"
@@ -118,4 +121,5 @@ while (True):
     print("valve.txt ready.")
     # sleep for 5 minutes (in seconds)
     time.sleep(5 * 60)
+
 
