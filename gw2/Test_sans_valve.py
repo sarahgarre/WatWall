@@ -1,8 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-# test sync !
-
 from datetime import datetime
 import time
 import calendar
@@ -73,7 +71,6 @@ if dataFile:
 # Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
 while (True):
 
-    print("test printing bullshit")
     # Example reading last sensor value
     dataFile = None
     try:  # urlopen not usable with "with"
@@ -93,7 +90,7 @@ while (True):
         url = "http://" +host +"/api/grafana/query"
         now = get_timestamp()
         gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
-              'targets': [{'target': 'HUM3'}, {'target': 'HUM4'}, {'target': 'HUM5'}, {'target': 'SDI0'}, {'target': 'SDI1'}, {'target': 'SDI4'}, {'target': 'SDI7'}, {'target': 'SDI8'}, {'target': 'SDI9'}, {'target': 'SDI10'}]}
+              'targets': [{'target': 'HUM3'}, {'target': 'HUM4'}, {'target': 'HUM5'}]}
         data = json.dumps(gr)
         print(data)
         dataFile = urllib.urlopen(url, data, 20)
@@ -112,23 +109,20 @@ while (True):
               u", Message=" + traceback.format_exc())
     if dataFile:
         dataFile.close()
+# calcul test pour trouver la valeur moyenne de HUM3 dans la dernière heure
+som = 0
+length_result = len(result[0].get('datapoints'))
+for i in range(0,length_result):
+    som = som + result[0].get('datapoints')[i][0]
+average = som/length_result = len(result[0].get('datapoints'))
+print average
 
-    # calcul test pour trouver la valeur moyenne de HUM3 dans la dernière heure
-    som = 0
-    length_result = len(result[0].get('datapoints'))
-    for i in range(0, length_result):
-        som = som + result[0].get('datapoints')[i][0]
-    averageHUM3 = som/length_result
-    print averageHUM3
-
-
-    timestamp = get_timestamp()
-    # erase the current file and open the valve in 30 seconds
-    open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
-    # append to the file and close the valve 1 minute later
-    open("valve.txt", 'a').write(str(timestamp + 90) + ";0\n")
-    print("valve.txt ready.")
-    # sleep for 5 minutes (in seconds)
-    time.sleep(5 * 60)
-
+timestamp = get_timestamp()
+# erase the current file and open the valve in 30 seconds
+open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
+# append to the file and close the valve 1 minute later
+open("valve.txt", 'a').write(str(timestamp + 90) + ";0\n")
+print("valve.txt ready.")
+# sleep for 5 minutes (in seconds)
+time.sleep(5 * 60)
 
