@@ -16,7 +16,7 @@ import urllib2 as urllib
 user = "GW3"
 test = True
 # True to run the code locally
-# Run to implement the code on the server
+# False to implement the code on the server
 
 # 1) Ensure to run in the user home directory
 # !!! MUST NOT BE CHANGED !!!
