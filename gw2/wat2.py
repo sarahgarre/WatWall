@@ -68,7 +68,8 @@ except:
 if dataFile:
     dataFile.close()
 
-# Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
+# Your program must create a data file with one column with the Linux EPOCH time and your valve state
+# (0=closed, 1=opened)
 while (True):
 
     # Example reading last sensor value
@@ -110,13 +111,71 @@ while (True):
     if dataFile:
         dataFile.close()
 
-    # calcul test pour trouver la valeur moyenne de HUM3 dans la dernière heure
-    som = 0
+    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM3
+    somme = 0
     length_result = len(result[0].get('datapoints'))
     for i in range(0, length_result):
-        som = som + result[0].get('datapoints')[i][0]
-    averageHUM3 = som/length_result
+        somme = somme + result[0].get('datapoints')[i][0]
+    averageHUM3 = somme/length_result
     print averageHUM3
+
+    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM4
+    somme = 0
+    length_result = len(result[1].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[1].get('datapoints')[i][0]
+    averageHUM4 = somme / length_result
+    print averageHUM4
+
+    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM5
+    somme = 0
+    length_result = len(result[2].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[2].get('datapoints')[i][0]
+    averageHUM5 = somme / length_result
+    print averageHUM5
+
+    # calcul de la somme des radiations pour la dernière heure -> Rn [MJ/(m2 hour)]
+    somme = 0
+    length_result = len(result[3].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[3].get('datapoints')[i][0]
+    sommeRn = somme*277.78
+    print sommeRn
+
+    # calcul de la température moyenne pour la dernière heure -> Thr [°C]
+    somme = 0
+    length_result = len(result[6].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[6].get('datapoints')[i][0]
+    Thr = somme / length_result
+    print Thr
+
+    # calcul de la pression de vapeur saturante pour la dernière heure par l'équation August-Roche-Magnus -> eThr [kPa]
+    # (https://en.wikipedia.org/wiki/Vapour_pressure_of_water)
+    eThr = 0.61094*math.exp(17.625*Thr/(Thr + 243.04))
+    print eThr
+
+    # calcul de la pression de vapeur réele -> ea [kPa]
+    somme = 0
+    length_result = len(result[7].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[7].get('datapoints')[i][0]
+    ea = somme / length_result
+    print ea
+
+    # calcul de la vitesse moyenne du vent pour la dernière heure -> u2 [m/s]
+    somme = 0
+    length_result = len(result[5].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[5].get('datapoints')[i][0]
+    u2 = somme / length_result
+    print u2
+
+    # calcul de la pente de la courbe de pression de vapeur à saturation -> delta [kPa /°C]
+    delta = 1635631.478*math.exp(3525*Thr/(200*Thr + 48608))/(25*Thr + 6076)**2
+    print delta
+
 
 
     timestamp = get_timestamp()
