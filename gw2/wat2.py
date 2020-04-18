@@ -90,7 +90,7 @@ while (True):
         url = "http://" +host +"/api/grafana/query"
         now = get_timestamp()
         gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
-              'targets': [{'target': 'HUM3'}, {'target': 'HUM4'}, {'target': 'HUM5'}]}
+              'targets': [{'target': 'HUM3'}, {'target': 'HUM4'}, {'target': 'HUM5'}, {'target': 'SDI0'}, {'target': 'SDI1'}, {'target': 'SDI4'}, {'target': 'SDI7'}, {'target': 'SDI8'}, {'target': 'SDI9'}, {'target': 'SDI10'}]}
         data = json.dumps(gr)
         print(data)
         dataFile = urllib.urlopen(url, data, 20)
@@ -115,8 +115,9 @@ while (True):
     length_result = len(result[0].get('datapoints'))
     for i in range(0, length_result):
         som = som + result[0].get('datapoints')[i][0]
-    average = som/length_result
-    print average
+    averageHUM3 = som/length_result
+    print averageHUM3
+
 
     timestamp = get_timestamp()
     # erase the current file and open the valve in 30 seconds
