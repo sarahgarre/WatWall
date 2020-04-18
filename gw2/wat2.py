@@ -1,8 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-# test sync !
-
 from datetime import datetime
 import time
 import calendar
@@ -113,9 +111,9 @@ while (True):
     if dataFile:
         dataFile.close()
 
-    # calcul de la valeur moyenne de HUM4 dans la dernière heure -> averageHUM4
+    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM4
     somme = 0
-    length_result = len(result[0].get('datapoints')
+    length_result = len(result[0].get('datapoints'))
     for i in range(0, length_result):
         somme = somme + result[0].get('datapoints')[i][0]
     averageHUM4 = somme/length_result
@@ -129,7 +127,7 @@ while (True):
     averageHUM5 = somme / length_result
     print averageHUM5
 
-    # calcul de la valeur moyenne de HUM6 dans la dernière heure -> averageHUM6
+    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM6
     somme = 0
     length_result = len(result[2].get('datapoints'))
     for i in range(0, length_result):
@@ -206,27 +204,11 @@ while (True):
     ET0h = (0.408* delta * sommeRn + gamma * 37 / (Thr + 273) * u2 *(eThr-ea))/(delta+gamma*(1 + 0.34 * u2))
     print ET0h
 
-    # TODO : Stocker les dernières 24 ET0 calculées
+    # formule de Kl
 
-    # TODO : compute actual irrigation dose with Kl
+    # Calcul de dose en prenant la pluie en compte
 
-    # TODO :  Calcul de dose en prenant la pluie en compte
-
-    # TODO : enter 'upperLimit' and 'lowerLimit' for irrigation trigger
-
-    # TODO : exploitation des données des HUM
-    # Quality check for HUM sensors
-    if # condition de qualité a vérifier
-
-        if averageHUM456 > upperLimit
-            # no irrigation
-        elif averageHUM456 < lowerLimit
-            # check WC after period and re-water accordingly
-        else
-            # normal irrigation
-    else # if quality not encountered
-         # normal irrigation
-
+    # if par rapport à la valeur d'humidité
 
 
     timestamp = get_timestamp()
@@ -237,5 +219,4 @@ while (True):
     print("valve.txt ready.")
     # sleep for 5 minutes (in seconds)
     time.sleep(5 * 60)
-
 

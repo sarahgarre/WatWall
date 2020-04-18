@@ -1,22 +1,18 @@
-#!/usr/bin/env python2
-# -*- coding: utf-8 -*-
-
-# Packages of Christophe
-
-from datetime import datetime
+import csv # module for csv files
 import time
-import calendar
-import json
-import math
 import os,sys
 import socket
-import traceback
-import urllib2 as urllib
+
+
+# Parameters
+A=1920           # box area [cm2]
+Q=1000           # discharge [cm3/hr]
+Kc=1             # cultural coefficient [-]
 
 user = "GW3"
-test = True
+test = False
 # True to run the code locally
-# Run to implement the code on the server
+# False to implement the code on the server
 
 # 1) Ensure to run in the user home directory
 # !!! MUST NOT BE CHANGED !!!
@@ -48,97 +44,41 @@ else:
         print(user+' lock exists for process #' + current + " : may be you should ./clean.sh !")
         sys.exit()
 
-# 3) Date determination
-# !!! MUST NOT BE CHANGED !!!
-# Explanation: EPOCH time is the number of seconds since 1/1/1970
-def get_timestamp():
-    return int(time.time())
 
-# Transform an EPOCH time in a lisible date (for Grafana)
-def formatDate(epoch):
-    dt = datetime.fromtimestamp(epoch)
-    return dt.isoformat()
+# ET file of Gembloux
+file=open("ET0_2010_2019.csv","r")                          # open the file
+reader = csv.reader(file, delimiter = ";")                  # file reading initialization
 
-# Transform an EPOCH time in a lisible date (for Grafana)
-def formatDateGMT(epoch):
-    dt = datetime.fromtimestamp(epoch - (2 * 60 * 60) ) # We are in summer and in Belgium !
-    return dt.isoformat()
+next(reader)
+next(reader)
 
-delimiters = ' \t\n\r\"\''
+outfile = open('valve.txt','w')
+
+for row in reader:                                          # loop to go through the reader
+    print (row[0])                                          # display rows
+
+    # Convert datetime into epoch
+    hiredate = row[0]                                       # select date in the list
+    pattern = '%d/%m/%Y %H:%M'                              # date format
+    epoch = int(time.mktime(time.strptime(hiredate, pattern)))  # convert date to epoch time
+    print epoch
+
+    # Calculate irrigation time
+    ET0=float(row[1])                                       # Daily reference evapotranspiration [mm/day]
+    ET=Kc*ET0/10                                            # Daily evapotranspiration [cm/day]
+    time_irrig=ET*A/Q*60*60                                 # Daily watering time based on ET [sec]
+
+    # open the valve the next day (+ 24*60*60) at 00:00
+    outfile.write(str(epoch + 24*60*60) + ";1\n")
+    # append to the file and close the valve the next day (+ 24*60*60) at 00:00 + time_irrig
+    outfile.write(str(epoch + 24*60*60 + time_irrig) + ";0\n")
+
+outfile.close()                                             # close valve.txt
+print("valve.txt ready.")
+file.close()                                                # close the file
 
 
-# 4) Getting the list of all available sensors
-# !!! MUST NOT BE CHANGED !!!
 
-dataFile = None
-try:  # urlopen not usable with "with"
-    url = "http://" +host +"/api/grafana/search"
-    dataFile = urllib.urlopen(url, json.dumps(""), 20)
-    result = json.load(dataFile)
-    for index in result:
-        print(index)
-except:
-    print(u"URL=" + (url if url else "") + \
-          u", Message=" + traceback.format_exc())
-if dataFile:
-    dataFile.close()
 
-# 5) Irrigation scheme: collecting sensor readings, taking a decision to irrigate or not
-# and sending the instructions to the valves
 
-# !!! THIS IS WHERE WE MAKE CHANGES !!!
-"""
-Objective: Your program must create a data file with one column with the Linux EPOCH time
-and your valve state (0=closed, 1=opened)
-"""
-
-while (True):
-
-    # Example reading last sensor value
-    dataFile = None
-    try:  # urlopen not usable with "with"
-        url = "http://" +host +"/api/get/%21s_HUM1"
-        dataFile = urllib.urlopen(url, None, 20)
-        data = dataFile.read(80000)
-        print("HUM1=" + data.strip(delimiters))
-    except:
-        print(u"URL=" + (url if url else "") + \
-              u", Message=" + traceback.format_exc())
-    if dataFile:
-        dataFile.close()
-
-    # Example reading all values of the last hour (60 minutes of 60 seconds)
-    dataFile = None
-    try:  # urlopen not usable with "with"
-        url = "http://" +host +"/api/grafana/query"
-        now = get_timestamp()
-        gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
-              'targets': [{'target': 'HUM1'}, {'target': 'HUM2'}, {'target': 'HUM3'}]}
-        data = json.dumps(gr)
-        print(data)
-        dataFile = urllib.urlopen(url, data, 20)
-        result = json.load(dataFile)
-        if result:
-            print(result)
-            for target in result:
-                # print target
-                index = target.get('target')
-                for datapoint in target.get('datapoints'):
-                    value = datapoint[0]
-                    stamp = datapoint[1] / 1000
-                    print(index + ": " + formatDate(stamp) + " = " + str(value))
-    except:
-        print(u"URL=" + (url if url else "") + \
-              u", Message=" + traceback.format_exc())
-    if dataFile:
-        dataFile.close()
-
-    timestamp = get_timestamp()
-    # erase the current file and open the valve in 30 seconds
-    open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
-    # append to the file and close the valve 1 minute later
-    open("valve.txt", 'a').write(str(timestamp + 90) + ";0\n")
-    print("valve.txt ready.")
-    # sleep for 5 minutes (in seconds)
-    time.sleep(5 * 60)
 
