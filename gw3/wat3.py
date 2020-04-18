@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
+# Packages of Christophe
+
 from datetime import datetime
 import time
 import calendar
@@ -11,8 +13,13 @@ import socket
 import traceback
 import urllib2 as urllib
 
-user = "GW2"
+user = "GW3"
 test = True
+# True to run the code locally
+# Run to implement the code on the server
+
+# 1) Ensure to run in the user home directory
+# !!! MUST NOT BE CHANGED !!!
 
 if test:
     host = "greenwall.gembloux.uliege.be"
@@ -24,7 +31,10 @@ else:
         os.chdir(DIR_BASE)
     print(os.getcwd())
 
-    # Ensure to be the only instance to run
+# 2)Ensure to be the only instance to run
+# !!! MUST NOT BE CHANGED !!!
+# Explanation: if another program is running, it gets killed and replaced by this one
+
     pid = str(os.getpid())
     _lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 
@@ -38,7 +48,9 @@ else:
         print(user+' lock exists for process #' + current + " : may be you should ./clean.sh !")
         sys.exit()
 
-# EPOCH time is the number of seconds since 1/1/1970
+# 3) Date determination
+# !!! MUST NOT BE CHANGED !!!
+# Explanation: EPOCH time is the number of seconds since 1/1/1970
 def get_timestamp():
     return int(time.time())
 
@@ -54,7 +66,10 @@ def formatDateGMT(epoch):
 
 delimiters = ' \t\n\r\"\''
 
-# Getting the list of all available sensors
+
+# 4) Getting the list of all available sensors
+# !!! MUST NOT BE CHANGED !!!
+
 dataFile = None
 try:  # urlopen not usable with "with"
     url = "http://" +host +"/api/grafana/search"
@@ -68,7 +83,15 @@ except:
 if dataFile:
     dataFile.close()
 
-# Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
+# 5) Irrigation scheme: collecting sensor readings, taking a decision to irrigate or not
+# and sending the instructions to the valves
+
+# !!! THIS IS WHERE WE MAKE CHANGES !!!
+"""
+Objective: Your program must create a data file with one column with the Linux EPOCH time
+and your valve state (0=closed, 1=opened)
+"""
+
 while (True):
 
     # Example reading last sensor value

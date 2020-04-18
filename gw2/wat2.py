@@ -94,7 +94,7 @@ while (True):
         url = "http://" +host +"/api/grafana/query"
         now = get_timestamp()
         gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
-              'targets': [{'target': 'HUM3'}, {'target': 'HUM4'}, {'target': 'HUM5'}, {'target': 'SDI0'}, {'target': 'SDI1'}, {'target': 'SDI4'}, {'target': 'SDI7'}, {'target': 'SDI8'}, {'target': 'SDI9'}, {'target': 'SDI10'}]}
+              'targets': [{'target': 'HUM4'}, {'target': 'HUM5'}, {'target': 'HUM6'}, {'target': 'SDI0'}, {'target': 'SDI1'}, {'target': 'SDI4'}, {'target': 'SDI7'}, {'target': 'SDI8'}, {'target': 'SDI9'}, {'target': 'SDI10'}]}
         data = json.dumps(gr)
         print(data)
         dataFile = urllib.urlopen(url, data, 20)
@@ -114,36 +114,44 @@ while (True):
     if dataFile:
         dataFile.close()
 
-    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM3
+    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM4
     somme = 0
     length_result = len(result[0].get('datapoints'))
     for i in range(0, length_result):
         somme = somme + result[0].get('datapoints')[i][0]
-    averageHUM3 = somme/length_result
-    print averageHUM3
-
-    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM4
-    somme = 0
-    length_result = len(result[1].get('datapoints'))
-    for i in range(0, length_result):
-        somme = somme + result[1].get('datapoints')[i][0]
-    averageHUM4 = somme / length_result
+    averageHUM4 = somme/length_result
     print averageHUM4
 
     # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM5
     somme = 0
+    length_result = len(result[1].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[1].get('datapoints')[i][0]
+    averageHUM5 = somme / length_result
+    print averageHUM5
+
+    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM6
+    somme = 0
     length_result = len(result[2].get('datapoints'))
     for i in range(0, length_result):
         somme = somme + result[2].get('datapoints')[i][0]
-    averageHUM5 = somme / length_result
-    print averageHUM5
+    averageHUM6 = somme / length_result
+    print averageHUM6
+
+    # calcul de la moyenne des 3 sondes -> averageHUM456
+    averageHUM456 = (averageHUM4 + averageHUM5 + averageHUM6)/3
+    print averageHUM456
+
+    # calibration
+    # vérification de la qualité de la mesure
+
 
     # calcul de la somme des radiations pour la dernière heure -> Rn [MJ/(m2 hour)]
     somme = 0
     length_result = len(result[3].get('datapoints'))
     for i in range(0, length_result):
-        somme = somme + result[3].get('datapoints')[i][0]
-    sommeRn = somme*277.78
+        sommeRn = somme + result[3].get('datapoints')[i][0]
+    sommeRn = sommeRn * 0.0036
     print sommeRn
 
     # calcul de la température moyenne pour la dernière heure -> Thr [°C]
@@ -179,6 +187,31 @@ while (True):
     delta = 1635631.478*math.exp(3525*Thr/(200*Thr + 48608))/(25*Thr + 6076)**2
     print delta
 
+    # calcul de la pression atmosphérique moyenne pour la dernière heure -> P [kPa]
+    somme = 0
+    length_result = len(result[8].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[8].get('datapoints')[i][0]
+    P = somme / length_result
+    print P
+
+    # calcul de la constante psychrométrique -> gamma [kPa/°C] https://en.wikipedia.org/wiki/Psychrometric_constant
+    Cp = 0.001005  # Specific Heat Capacities of Air at 300 K [MJ/Kg K]
+                   # https://www.ohio.edu/mechanical/thermo/property_tables/air/air_Cp_Cv.html
+    lambdav = 2.26  # Latent heat of water vaporization [MJ / kg]
+    MW_ratio = 0.622 # Ratio molecular weight of water vapor/dry air
+    gamma = Cp*P/(lambdav*MW_ratio)
+    print gamma
+
+    # formule ET0 [mm/hour]
+    ET0h = (0.408* delta * sommeRn + gamma * 37 / (Thr + 273) * u2 *(eThr-ea))/(delta+gamma*(1 + 0.34 * u2))
+    print ET0h
+
+    # formule de Kl
+
+    # Calcul de dose en prenant la pluie en compte
+
+    # if par rapport à la valeur d'humidité
 
 
     timestamp = get_timestamp()
