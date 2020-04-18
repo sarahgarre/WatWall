@@ -216,7 +216,7 @@ while (True):
 
     # TODO : exploitation des données des HUM
     # Quality check for HUM sensors
-    if # condition de qualité
+    if # condition de qualité a vérifier
 
         if averageHUM456 > upperLimit
             # no irrigation
