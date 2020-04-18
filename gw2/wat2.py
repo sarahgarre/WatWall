@@ -204,12 +204,25 @@ while (True):
     ET0h = (0.408* delta * sommeRn + gamma * 37 / (Thr + 273) * u2 *(eThr-ea))/(delta+gamma*(1 + 0.34 * u2))
     print ET0h
 
-    # formule de Kl
+    # Crop coefficient [Temporaire] #TODO
+    Kl = 0.4
 
-    # Calcul de dose en prenant la pluie en compte
+    # Dimensions du pot
+    Area = 0.75 * 0.14  #m2
+
+    # Pluie durant le dernière heure -> Pluie [mm]
+    somme = 0
+    length_result = len(result[4].get('datapoints'))
+    for i in range(0, length_result):
+        Pluie = somme + result[4].get('datapoints')[i][0]/60 # on divise par 60 car on cumule des intensités de pluie
+        Pluie = Pluie * Area                                 # exprimées en mm/h
+    print Pluie
+
+    # Calcul de dose à appliquer pour la dernière heure [L]
+    Dosis = ET0h * Kl * Area - Pluie
+    print Dosis
 
     # if par rapport à la valeur d'humidité
-
 
     timestamp = get_timestamp()
     # erase the current file and open the valve in 30 seconds
