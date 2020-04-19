@@ -2,6 +2,7 @@ import csv # module for csv files
 import time
 import os,sys
 import socket
+import glob
 import shutil
 
 
@@ -52,9 +53,10 @@ else:
 # irrigation
 
 # a. copy the ET0 file in the directory
-
-filePath = shutil.copy('ET0_2010_2019.csv', 'cp /home/WatWall/gw3/ET0_2010_2019.csv/home/gw3')
-print(filePath)
+"""
+Write in the putty terminal:
+cp /home/WatWall/gw3/ET0_2010_2019.csv /home/gw3
+"""
 
 # b. read the ET0 file
 
