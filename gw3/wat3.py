@@ -53,7 +53,7 @@ else:
 
 # a. copy the ET0 file in the directory
 
-filePath = shutil.copy('ET0_2010_2019.csv', 'cp /home/WatWall/gw3/')
+filePath = shutil.copy('ET0_2010_2019.csv', 'cp /home/WatWall/gw3/ET0_2010_2019.csv/home/gw3')
 print(filePath)
 
 # b. read the ET0 file
