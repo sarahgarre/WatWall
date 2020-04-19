@@ -2,6 +2,7 @@ import csv # module for csv files
 import time
 import os,sys
 import socket
+import shutil
 
 
 # Parameters
@@ -14,6 +15,7 @@ test = False
 # True to run the code locally
 # False to implement the code on the server
 
+# _______________________________________________________________________
 # 1) Ensure to run in the user home directory
 # !!! MUST NOT BE CHANGED !!!
 
@@ -27,6 +29,7 @@ else:
         os.chdir(DIR_BASE)
     print(os.getcwd())
 
+# _______________________________________________________________________
 # 2)Ensure to be the only instance to run
 # !!! MUST NOT BE CHANGED !!!
 # Explanation: if another program is running, it gets killed and replaced by this one
@@ -45,7 +48,16 @@ else:
         sys.exit()
 
 
-# ET file of Gembloux
+# _______________________________________________________________________
+# irrigation
+
+# a. copy the ET0 file in the directory
+
+filePath = shutil.copy('ET0_2010_2019.csv', 'cp /home/WatWall/gw3/')
+print(filePath)
+
+# b. read the ET0 file
+
 file=open("ET0_2010_2019.csv","r")                          # open the file
 reader = csv.reader(file, delimiter = ";")                  # file reading initialization
 
