@@ -2,8 +2,6 @@ import csv # module for csv files
 import time
 import os,sys
 import socket
-import glob
-import shutil
 
 
 # Parameters
@@ -16,7 +14,6 @@ test = False
 # True to run the code locally
 # False to implement the code on the server
 
-# _______________________________________________________________________
 # 1) Ensure to run in the user home directory
 # !!! MUST NOT BE CHANGED !!!
 
@@ -30,7 +27,6 @@ else:
         os.chdir(DIR_BASE)
     print(os.getcwd())
 
-# _______________________________________________________________________
 # 2)Ensure to be the only instance to run
 # !!! MUST NOT BE CHANGED !!!
 # Explanation: if another program is running, it gets killed and replaced by this one
@@ -49,17 +45,7 @@ else:
         sys.exit()
 
 
-# _______________________________________________________________________
-# irrigation
-
-# a. copy the ET0 file in the directory
-"""
-Write in the putty terminal:
-cp /home/WatWall/gw3/ET0_2010_2019.csv /home/gw3
-"""
-
-# b. read the ET0 file
-
+# ET file of Gembloux
 file=open("ET0_2010_2019.csv","r")                          # open the file
 reader = csv.reader(file, delimiter = ";")                  # file reading initialization
 
@@ -80,7 +66,7 @@ for row in reader:                                          # loop to go through
     # Calculate irrigation time
     ET0=float(row[1])                                       # Daily reference evapotranspiration [mm/day]
     ET=Kc*ET0/10                                            # Daily evapotranspiration [cm/day]
-    time_irrig=ET*A/Q*60*60                                 # Daily watering time based on ET [sec]
+    time_irrig=int(ET*A/Q*60*60)                            # Daily watering time based on ET [sec]
 
     # open the valve the next day (+ 24*60*60) at 00:00
     outfile.write(str(epoch + 24*60*60) + ";1\n")
