@@ -55,18 +55,15 @@ else:
 def get_timestamp():
     return int(time.time())
 
-
 # Transform an EPOCH time in a lisible date (for Grafana)
 def formatDate(epoch):
     dt = datetime.fromtimestamp(epoch)
     return dt.isoformat()
 
-
 # Transform an EPOCH time in a lisible date (for Grafana)
 def formatDateGMT(epoch):
     dt = datetime.fromtimestamp(epoch - (2 * 60 * 60))  # We are in summer and in Belgium !
     return dt.isoformat()
-
 
 delimiters = ' \t\n\r\"\''
 
@@ -95,15 +92,14 @@ Objective: Your program must create a data file with one column with the Linux E
 and your valve state (0=closed, 1=opened)
 """
 
+# create mean function
+def mean(numbers):
+    return float(sum(numbers)) / max(len(numbers), 1)
+
 while (True):
 
     # __________________________________________________________________
     # a. reading all values of the last 5 minutes (5 minutes of 60 seconds)
-
-    # create mean function
-    def mean(numbers):
-        return float(sum(numbers)) / max(len(numbers), 1)
-
 
     dataFile = None
     try:  # urlopen not usable with "with"
@@ -193,13 +189,32 @@ while (True):
         theta_mean[i] = coef[0] * theta_mean[i] + coef[1]   # calculate the real value
         print(theta_mean[i])
 
-    # _____________________________________________________________________________
-    # writing the valve.txt file
-    timestamp = get_timestamp()
-    # erase the current file and open the valve in 30 seconds
-    open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
-    # append to the file and close the valve 1 minute later
-    open("valve.txt", 'a').write(str(timestamp + 90) + ";0\n")
-    print("valve.txt ready.")
-    # sleep for 5 minutes (in seconds)
-    time.sleep(5 * 60)
+    #______________________________________________________________________________
+    # f. irrigation
+
+    # Parameters
+    A = 1920                    # box area [cm2]
+    H = 12                      # box eight [cm]
+    Q = 1000                    # discharge [cm3/hr]
+    theta_threshold=0.25        # water content value below which irrigation is switched on [cm3/cm3]
+    theta_fc=0.30               # water content at field capacity [cm3/cm3]
+
+    # Irrigation time
+    V_irrig = (theta_fc - theta_threshold) * A * H      # Amount of water [cm3]
+    time_irrig = V_irrig/Q                              # Irrigation time [hr]
+
+    # Find the minimal water content
+    index_min=list.index(min(theta_mean))
+
+    # Choose to irrigate or not
+    if theta_mean[index_min] <= theta_threshold
+            timestamp = get_timestamp()
+            # erase the current file and open the valve in 30 seconds
+            open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
+            # append to the file and close the valve time_irrig later
+            open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig) + ";0\n")
+            print("valve.txt ready.")
+            # sleep for 1 hour (in seconds)
+            time.sleep(60 * 60)
+
+
