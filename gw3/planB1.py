@@ -5,7 +5,6 @@
 
 from datetime import datetime
 import time
-import calendar
 import json
 import math
 import os, sys
@@ -92,10 +91,6 @@ Objective: Your program must create a data file with one column with the Linux E
 and your valve state (0=closed, 1=opened)
 """
 
-# create mean function
-def mean(numbers):
-    return float(sum(numbers)) / max(len(numbers), 1)
-
 while (True):
 
     # __________________________________________________________________
@@ -119,11 +114,11 @@ while (True):
         gr = {'range': {'from': formatDateGMT(now - (24 * 60 * 60)), 'to': formatDateGMT(now)}, \
               'targets': [{'target': 'SDI0'}, {'target': 'SDI1'}, {'target': 'SDI4'}, {'target': 'SDI7'}, {'target': 'SDI8'}, {'target': 'SDI9'}, {'target': 'SDI10'}]}
         data = json.dumps(gr)
-        print(data)
+        #print(data)
         dataFile = urllib.urlopen(url, data, 20)
         result = json.load(dataFile)
         if result:
-            print(result)
+            #print(result)
             for target in result:
                 # print target
                 index = target.get('target')
@@ -146,9 +141,10 @@ while (True):
     Rn = 0                                          # Sum initialization
     length_result = len(result[index_res].get('datapoints'))
     for i in range(0, length_result):
-        Rn += result[index_res].get('datapoints')[i][0]     # Calculate sum [J/m2/day]
+        Rn += 60*result[index_res].get('datapoints')[i][0]     # Calculate sum [J/m2/day]
+        # *60 to get the energy per minute [J/min]
     Rn = Rn/(1E06)                                  # Convert units [MJ/m2/day]
-    print(Rn)
+    print'Rn=',Rn,'MJ/m2/day'
 
     # wind speed (SDI4) : mean value over 24 hours [m/s]
     index_res = 2                                           # Index in the result dict
@@ -157,7 +153,7 @@ while (True):
     for j in range(0, length_result):
         u_sum += result[index_res].get('datapoints')[j][0]  # Calculate sum [m/s]
     u = u_sum / length_result                               # Calculate mean [m/s]
-    print(u)
+    print'u =',u,'m/s'
 
     # temperature (SDI7) : mean value over 24 hours [°C]
     index_res=3                                     # Index in the result dict
@@ -166,7 +162,7 @@ while (True):
     for j in range(0, length_result):
         T_sum += result[index_res].get('datapoints')[j][0]  # Calculate sum [°C]
     T = T_sum / length_result                       # Calculate mean [°C]
-    print(T)
+    print'T =',T,'°C'
 
     # actual vapor pressure (SDI8) : mean value over 24 hours [kPa]
     index_res = 4                                           # Index in the result dict
@@ -175,7 +171,7 @@ while (True):
     for j in range(0, length_result):
         e_sum += result[index_res].get('datapoints')[j][0]  # Calculate sum [kPa]
     e_a = e_sum / length_result                             # Calculate mean [kPa]
-    print(e_a)
+    print'e_a =',e_a,'kPa'
 
     # atmospheric pressure (SDI9) : mean value over 24 hours [kPa]
     index_res=5                                             # Index in the result dict
@@ -184,7 +180,7 @@ while (True):
     for j in range(0, length_result):
         p_sum += result[index_res].get('datapoints')[j][0]  # Calculate sum [kPa]
     p = p_sum / length_result                               # Calculate mean [kPa]
-    print(p)
+    print'p =',p,'kPa'
 
     # relative humidity (SDI10) : mean value over 24 hours [%]
     index_res = 6                                           # Index in the result dict
@@ -193,7 +189,7 @@ while (True):
     for j in range(0, length_result):
         RH_sum += result[index_res].get('datapoints')[j][0] # Calculate sum [%]
     RH = RH_sum / length_result                             # Calculate mean [%]
-    print(RH)
+    print'RH =',RH,'%'
 
     # rain (SDI1) : [mm/hr] -> [mm]
     index_res = 1                                           # Index in the result dict
@@ -201,7 +197,7 @@ while (True):
     P = 0                                               # Sum initialization
     for j in range(0, length_result):
         P += (result[index_res].get('datapoints')[j][0])/60  # Calculate sum [mm]
-    print(P)
+    print'P =',P,'mm'
 
     # ___________________________________________________________________________
     # b. Computation of parameters
@@ -214,19 +210,19 @@ while (True):
 
     # saturation vapour pressure [kPa]
     e_sat = 0.6108*math.exp((17.27*T)/(T+273.3))
-    print(e_sat)
+    print'e_sat =',e_sat,'kPa'
     # psychrometric constant [kPa/°C]
     gamma = 0.665 * p * 1E-03
-    print(gamma)
+    print'gamma =',gamma,'kPa/°C'
     # delta [kPa/°C]
     delta = (4098*e_sat)/(T+237.3)**2
-    print(delta)
+    print'delta =',delta,'kPa/°C'
 
     # ___________________________________________________________________________
     # c. ET0: Daily reference evapotranspiration [mm/day]
     cst = 900
     ET0 = (0.408 * delta * Rn + gamma * cst/(T+273) * u * (e_sat - e_a))/(delta + gamma * (1+0.34*u))
-    print('ET0 =', ET0)
+    print 'ET0 =', ET0, 'mm'
 
     # d. Irrigation
 
@@ -237,8 +233,8 @@ while (True):
 
     # ETc: Daily evapotranspiration [cm/day]
     ET = Kc * ET0 / 10  # Daily evapotranspiration [cm/day]
-    time_irrig = ET * A / Q * 60 * 60  # Daily watering time based on ET [sec]
-    print('time_irrig=',time_irrig)
+    time_irrig = int((ET-P/10) * A / Q * 60 * 60)  # Daily watering time [sec] based on ET [cm] and P [cm]
+    print'time_irrig=',time_irrig,'seconds'
 
     # Valve command
     timestamp = get_timestamp()
