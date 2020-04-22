@@ -163,8 +163,8 @@ while (True):
     # Volume à irriguer
     limite1 = 19.33
     limite2 = 15
-    volume_total = "à calculer"
-    superficie_au_sol= "à calculer"
+    volume_total = 12.6
+    superficie_au_sol= 10.5
 
     if 100*humidite > limite1:
         V_irrigation = ETR*10**(-2)*superficie_au_sol
