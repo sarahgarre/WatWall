@@ -117,18 +117,24 @@ while (True):
     if dataFile:
         dataFile.close()
 
+
+
+
+
+
+
     # calcul de la valeur moyenne des HUMX dans la dernière heure -> averageHUMX
     somme1 = 0
     somme2 = 0
     somme3 = 0
     length_result = len(result[0].get('datapoints'))
-    for i in range(0, length_result):
+    for i in range(length_result-60, length_result):
         somme1 = somme1 + result[0].get('datapoints')[i][0]
         somme2 = somme2 + result[1].get('datapoints')[i][0]
         somme3 = somme3 + result[2].get('datapoints')[i][0]
-    averageHUM4 = somme1 / length_result
-    averageHUM5 = somme2 / length_result
-    averageHUM6 = somme3 / length_result
+    averageHUM4 = somme1 / 60
+    averageHUM5 = somme2 / 60
+    averageHUM6 = somme3 / 60
     print averageHUM4
     print averageHUM5
     print averageHUM6
@@ -138,12 +144,21 @@ while (True):
     print averageHUM456
 
     # calibration page 18 http://manuals.decagon.com/Retired%20and%20Discontinued/Manuals/EC-20-EC-10-EC-5-Soil-Moisture-Sensor-Operators-Manual-(discontinued).pdf
-    VWC = 1.3 * averageHUM456 - 0.696
+
+    VWC = 1.3 * averageHUM456/2 - 0.696
     print VWC
+
+    VWC2 = 2.11*averageHUM456/2-0.675
+    print VWC2
+
+    VWC3 = (-3.14*10**(-7) * (averageHUM456 *1000)**2) + (1.16*10**(-3) * (averageHUM456*1000)) - 6.12*10**(-1)
+    print VWC3
+
 
     # vérification de la qualité de la mesure
 
-    # calcul de la somme des radiations pour la dernière heure -> Rn [MJ/(m2 hour)]
+
+    # calcul de la somme des radiations pour la journée passée -> Rn [MJ/(m2 hour)]
     somme = 0
     length_result = len(result[3].get('datapoints'))
     for i in range(0, length_result):
@@ -201,7 +216,7 @@ while (True):
     print gamma
 
     # formule ET0 [mm/hour]
-    ET0h = (0.408 * delta * sommeRn + gamma * (37 / (Thr + 273)) * u2 * (eThr - ea)) / (delta + gamma * (1 + 0.34 * u2))
+    ET0h = (0.408 * delta * sommeRn + gamma * (900 / (Thr + 273)) * u2 * (eThr - ea)) / (delta + gamma * (1 + 0.34 * u2))
     print ET0h
 
     # Crop coefficient [Temporaire] #TODO
@@ -226,7 +241,10 @@ while (True):
         Dosis = Dosis
     print Dosis
 
-    # if par rapport à la valeur d'humidité
+    # calcul du temps d'ouverture de la valve -> t [min]
+    Q = 1.5/60 # L/min
+    t = Dosis/Q
+    print t
 
     timestamp = get_timestamp()
     # erase the current file and open the valve in 30 seconds
