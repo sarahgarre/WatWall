@@ -13,7 +13,7 @@ import traceback
 import urllib2 as urllib
 
 user = "GW3"
-test = False
+test = True
 # True to run the code locally
 # False to implement the code on the server
 

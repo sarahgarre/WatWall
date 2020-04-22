@@ -68,7 +68,8 @@ except:
 if dataFile:
     dataFile.close()
 
-# Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
+# Your program must create a data file with one column with the Linux EPOCH time and your valve state
+# (0=closed, 1=opened)
 while (True):
 
     # Example reading last sensor value
@@ -90,7 +91,7 @@ while (True):
         url = "http://" +host +"/api/grafana/query"
         now = get_timestamp()
         gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
-              'targets': [{'target': 'HUM1'}, {'target': 'HUM2'}, {'target': 'HUM3'}]}
+              'targets': [{'target': 'HUM4'}, {'target': 'HUM5'}, {'target': 'HUM6'}, {'target': 'SDI0'}, {'target': 'SDI1'}, {'target': 'SDI4'}, {'target': 'SDI7'}, {'target': 'SDI8'}, {'target': 'SDI9'}, {'target': 'SDI10'}]}
         data = json.dumps(gr)
         print(data)
         dataFile = urllib.urlopen(url, data, 20)
@@ -109,6 +110,119 @@ while (True):
               u", Message=" + traceback.format_exc())
     if dataFile:
         dataFile.close()
+
+    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM4
+    somme = 0
+    length_result = len(result[0].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[0].get('datapoints')[i][0]
+    averageHUM4 = somme/length_result
+    print averageHUM4
+
+    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM5
+    somme = 0
+    length_result = len(result[1].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[1].get('datapoints')[i][0]
+    averageHUM5 = somme / length_result
+    print averageHUM5
+
+    # calcul de la valeur moyenne de HUM5 dans la dernière heure -> averageHUM6
+    somme = 0
+    length_result = len(result[2].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[2].get('datapoints')[i][0]
+    averageHUM6 = somme / length_result
+    print averageHUM6
+
+    # calcul de la moyenne des 3 sondes -> averageHUM456
+    averageHUM456 = (averageHUM4 + averageHUM5 + averageHUM6)/3
+    print averageHUM456
+
+    # calibration
+    # vérification de la qualité de la mesure
+
+
+    # calcul de la somme des radiations pour la dernière heure -> Rn [MJ/(m2 hour)]
+    somme = 0
+    length_result = len(result[3].get('datapoints'))
+    for i in range(0, length_result):
+        sommeRn = somme + result[3].get('datapoints')[i][0]
+    sommeRn = sommeRn * 0.0036
+    print sommeRn
+
+    # calcul de la température moyenne pour la dernière heure -> Thr [°C]
+    somme = 0
+    length_result = len(result[6].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[6].get('datapoints')[i][0]
+    Thr = somme / length_result
+    print Thr
+
+    # calcul de la pression de vapeur saturante pour la dernière heure par l'équation August-Roche-Magnus -> eThr [kPa]
+    # (https://en.wikipedia.org/wiki/Vapour_pressure_of_water)
+    eThr = 0.61094*math.exp(17.625*Thr/(Thr + 243.04))
+    print eThr
+
+    # calcul de la pression de vapeur réele -> ea [kPa]
+    somme = 0
+    length_result = len(result[7].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[7].get('datapoints')[i][0]
+    ea = somme / length_result
+    print ea
+
+    # calcul de la vitesse moyenne du vent pour la dernière heure -> u2 [m/s]
+    somme = 0
+    length_result = len(result[5].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[5].get('datapoints')[i][0]
+    u2 = somme / length_result
+    print u2
+
+    # calcul de la pente de la courbe de pression de vapeur à saturation -> delta [kPa /°C]
+    delta = 1635631.478*math.exp(3525*Thr/(200*Thr + 48608))/(25*Thr + 6076)**2
+    print delta
+
+    # calcul de la pression atmosphérique moyenne pour la dernière heure -> P [kPa]
+    somme = 0
+    length_result = len(result[8].get('datapoints'))
+    for i in range(0, length_result):
+        somme = somme + result[8].get('datapoints')[i][0]
+    P = somme / length_result
+    print P
+
+    # calcul de la constante psychrométrique -> gamma [kPa/°C] https://en.wikipedia.org/wiki/Psychrometric_constant
+    Cp = 0.001005  # Specific Heat Capacities of Air at 300 K [MJ/Kg K]
+                   # https://www.ohio.edu/mechanical/thermo/property_tables/air/air_Cp_Cv.html
+    lambdav = 2.26  # Latent heat of water vaporization [MJ / kg]
+    MW_ratio = 0.622 # Ratio molecular weight of water vapor/dry air
+    gamma = Cp*P/(lambdav*MW_ratio)
+    print gamma
+
+    # formule ET0 [mm/hour]
+    ET0h = (0.408* delta * sommeRn + gamma * 37 / (Thr + 273) * u2 *(eThr-ea))/(delta+gamma*(1 + 0.34 * u2))
+    print ET0h
+
+    # Crop coefficient [Temporaire] #TODO
+    Kl = 0.4
+
+    # Dimensions du pot
+    Area = 0.75 * 0.14  #m2
+
+    # Pluie durant le dernière heure -> Pluie [mm]
+    somme = 0
+    length_result = len(result[4].get('datapoints'))
+    for i in range(0, length_result):
+        Pluie = somme + result[4].get('datapoints')[i][0]/60 # on divise par 60 car on cumule des intensités de pluie
+        Pluie = Pluie * Area                                 # exprimées en mm/h
+    print Pluie
+
+    # Calcul de dose à appliquer pour la dernière heure [L]
+    Dosis = ET0h * Kl * Area - Pluie
+    print Dosis
+
+    # if par rapport à la valeur d'humidité
 
     timestamp = get_timestamp()
     # erase the current file and open the valve in 30 seconds
