@@ -109,7 +109,7 @@ while (True):
                     (meteo[2][q] + 237.3) ** 2)
         es = 100 * meteo[3][q] / meteo[5][q]
         ea = meteo[3][q]
-        altitude = 150  # au hasard, a demander, pas hyper important en belgique ca va pas varier de ouf
+        altitude = 106  # pour Mont-Saint-Guilbert
         albedo = 0.2
         Rs = meteo[0][q] * 10 ** (-6) * 60
         Rns = (1 - albedo) * Rs
@@ -155,26 +155,27 @@ while (True):
     # Vérification des données d'humidité
     humidite.sort()
 
-    if humidite[1]-humidite[0]>=0.08:
+    if humidite[1]-humidite[0]>0.08:
         del humidite[0]
-    elif humidite[2]-humidite[1]>=0.08:
+    elif humidite[2]-humidite[1]>0.08:
         del humidite[2]
 
     # Volume à irriguer
-    limite1 = "à calculer"
-    limite2 = "à calculer"
-    volume_mur = "à calculer"
+    limite1 = 19.33
+    limite2 = 15
+    volume_total = "à calculer"
+    superficie_au_sol= "à calculer"
 
-    if humidite > limite1:
-        V_irrigation = "à calculer"
+    if 100*humidite > limite1:
+        V_irrigation = ETR*10**(-2)*superficie_au_sol
     else:
-        if humidite < limite2:
-            V_irrigation = "à calculer"
+        if 100*humidite < limite2:
+            V_irrigation = (limite1-100*min(humidite))*volume_total
         else:
-            V_irrigation = "à calculer"
+            V_irrigation = (28-100*min(humidite))*volume_total
 
     # Planning d'irrigation
-    temps_irrigation = "V_irrigation/débit total(L/s)"
+    temps_irrigation = V_irrigation/1.5
     if temps_irrigation > 1200:
         temps_irrigation = 1200
 
