@@ -164,10 +164,9 @@ while (True):
     limite1 = 19.33
     limite2 = 15
     volume_total = 12.6
-    superficie_au_sol= 10.5
 
     if 100*humidite > limite1:
-        V_irrigation = ETR*10**(-2)*superficie_au_sol
+        V_irrigation = ETR*10**(-2)*10.5
     else:
         if 100*humidite < limite2:
             V_irrigation = (limite1-100*min(humidite))*volume_total
