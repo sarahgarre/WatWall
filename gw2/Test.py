@@ -166,7 +166,7 @@ while (True):
     sommeRn = sommeRn * 0.0036
     print sommeRn
 
-    # calcul de la température moyenne pour la dernière heure -> Thr [°C]
+    # calcul de la température moyenne pour la journée passée -> Thr [°C]
     somme = 0
     length_result = len(result[6].get('datapoints'))
     for i in range(0, length_result):
@@ -174,7 +174,7 @@ while (True):
     Thr = somme / length_result
     print Thr
 
-    # calcul de la pression de vapeur saturante pour la dernière heure par l'équation August-Roche-Magnus -> eThr [kPa]
+    # calcul de la pression de vapeur saturante pour la journée passée par l'équation August-Roche-Magnus -> eThr [kPa]
     # (https://en.wikipedia.org/wiki/Vapour_pressure_of_water)
     eThr = 0.61094 * math.exp(17.625 * Thr / (Thr + 243.04))
     print eThr
@@ -187,19 +187,20 @@ while (True):
     ea = somme / length_result
     print ea
 
-    # calcul de la vitesse moyenne du vent pour la dernière heure -> u2 [m/s]
+    # calcul de la vitesse moyenne du vent pour la journée passée -> u2 [m/s]
     somme = 0
     length_result = len(result[5].get('datapoints'))
     for i in range(0, length_result):
         somme = somme + result[5].get('datapoints')[i][0]
     u2 = somme / length_result
+    u2 = 0.01
     print u2
 
     # calcul de la pente de la courbe de pression de vapeur à saturation -> delta [kPa /°C]
     delta = 1635631.478 * math.exp(3525 * Thr / (200 * Thr + 48608)) / (25 * Thr + 6076) ** 2
     print delta
 
-    # calcul de la pression atmosphérique moyenne pour la dernière heure -> P [kPa]
+    # calcul de la pression atmosphérique moyenne pour la journée passée -> P [kPa]
     somme = 0
     length_result = len(result[8].get('datapoints'))
     for i in range(0, length_result):
@@ -215,9 +216,9 @@ while (True):
     gamma = Cp * P / (lambdav * MW_ratio)
     print gamma
 
-    # formule ET0 [mm/hour]
+    # formule ET0 [mm/jour]
     ET0h = (0.408 * delta * sommeRn + gamma * (900 / (Thr + 273)) * u2 * (eThr - ea)) / (delta + gamma * (1 + 0.34 * u2))
-    print ET0h
+    print "The value of ET0 for the past day is",round(ET0h,3), " mm."
 
     # Crop coefficient [Temporaire] #TODO
     Kl = 0.7
@@ -225,26 +226,26 @@ while (True):
     # Dimensions du pot -> Area [m2]
     Area = 0.75 * 0.14
 
-    # Pluie durant le dernière heure -> Pluie [L]
+    # Pluie durant la journée passée -> Pluie [L]
     somme = 0
     length_result = len(result[4].get('datapoints'))
     for i in range(0, length_result):
         Pluie = somme + result[4].get('datapoints')[i][0] / 60  # on divise par 60 car on cumule des intensités de pluie
         Pluie = Pluie * Area  # exprimées en mm/h
-    print Pluie
+    print "Yesterday the amount of rain was ",round(Pluie, 2), "L on the plant pot."
 
-    # Calcul de dose à appliquer pour la dernière heure [L]
+    # Calcul de dose à appliquer pour la journée passée [L]
     Dosis = ET0h * Kl * Area - Pluie
     if Dosis < 0:
         Dosis = 0
     else:
         Dosis = Dosis
-    print Dosis
+    print "The dosis of water to apply today is ",round(Dosis, 3), "L."
 
     # calcul du temps d'ouverture de la valve -> t [min]
     Q = 1.5/60 # L/min
     t = Dosis/Q
-    print t
+    print "Today we open the valve for",round(t,2)," minutes."
 
     timestamp = get_timestamp()
     # erase the current file and open the valve in 30 seconds
