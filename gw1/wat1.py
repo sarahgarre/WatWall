@@ -156,16 +156,24 @@ while (True):
         del humidite[2]
 
     # Volume à irriguer
-    limite1 = 19.33
-    limite2 = 15
+    limite1 = 0.1933
+    limite2 = 0.15
 
-    if 100*humidite > limite1:
+    if humidite > limite1:
         V_irrigation = ETR*10**(-2)*10.5
     else:
-        if 100*humidite < limite2:
-            V_irrigation = (28-min(humidite))*12.6
+        if humidite < limite2:
+            timestamp = get_timestamp()
+            open("valve.txt", 'w').write(str(timestamp) + ";1\n")
+            open("valve.txt", 'a').write(str(timestamp + 1200) + ";0\n")
+            open("valve.txt", 'a').write(str(timestamp+3600) + ";1\n")
+            open("valve.txt", 'a').write(str(timestamp + 4800) + ";0\n")
+            open("valve.txt", 'a').write(str(timestamp+7200) + ";1\n")
+            open("valve.txt", 'a').write(str(timestamp + 8400) + ";0\n")
+            time.sleep(3*60*60)
+            continue
         else:
-            V_irrigation = (limite1-100*min(humidite))*12.6
+            V_irrigation = (limite1-min(humidite))*12.6
 
     # Planning d'irrigation
     temps_irrigation = V_irrigation/0.000416
@@ -173,7 +181,7 @@ while (True):
         temps_irrigation = 1200
 
     timestamp = get_timestamp()
-    open("valve.txt", 'a').write(str(timestamp) + ";1\n")
+    open("valve.txt", 'w').write(str(timestamp) + ";1\n")
     open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n")
     time.sleep(60 * 60)
 
