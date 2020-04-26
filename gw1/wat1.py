@@ -129,7 +129,7 @@ while (True):
         gamma = 0.665 * meteo[4][q] * 10 ** (-3)
         vitesse_du_vent = meteo[1][q]
         ET0 += (0.408 * delta * Rn + gamma * (0.625 / (273 + meteo[2][q])) * vitesse_du_vent * (es - ea)) / (
-                    delta + gamma * (1 + 0.34 * vitesse_du_vent))
+                    delta + gamma * (1 + 0.34 * vitesse_du_vent)) # stocke la somme des ET0 calculés pour chaque minute
     ETR = ET0 * Kc # valeur réelle de l'ETP en considérant le type et le stade de la culture
 
     # Recueil des dernières valeurs d'humidité
@@ -180,8 +180,8 @@ while (True):
         temps_irrigation = 1200 # si non le remplace par 20 minutes
 
     timestamp = get_timestamp()
-    open("valve.txt", 'w').write(str(timestamp) + ";1\n")
-    open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n")
-    time.sleep(60 * 60)
+    open("valve.txt", 'w').write(str(timestamp) + ";1\n") # crée un nouveau planning et demande d'ouvrir la vanne à l'instant même
+    open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n") # demande la fermeture de la vanne après le temps d'irrigation calculé plus haut
+    time.sleep(60 * 60) # fait une pause dans l'éxecution d'une heure
 
 
