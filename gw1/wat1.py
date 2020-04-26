@@ -163,9 +163,9 @@ while (True):
         V_irrigation = ETR*10**(-2)*10.5
     else:
         if 100*humidite < limite2:
-            V_irrigation = (limite1-100*min(humidite))*12.6
+            V_irrigation = (28-min(humidite))*12.6
         else:
-            V_irrigation = (28-100*min(humidite))*12.6
+            V_irrigation = (limite1-100*min(humidite))*12.6
 
     # Planning d'irrigation
     temps_irrigation = V_irrigation/0.000416
