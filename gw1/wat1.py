@@ -132,7 +132,6 @@ while (True):
         ET0 += (0.408 * delta * Rn + gamma * (0.625 / (273 + meteo[2][q])) * vitesse_du_vent * (es - ea)) / (
                     delta + gamma * (1 + 0.34 * vitesse_du_vent))
     ETR = ET0 * Kc
-    print("L'ETR est de" + " " + str(ETR)+ " "+"mm")
 
     # Recueil des dernières valeurs d'humidité
     dataFile = None
@@ -148,13 +147,9 @@ while (True):
                   u", Message=" + traceback.format_exc())
         if dataFile:
             dataFile.close()
-    print("Les dernières valeurs d'humidité sont respectivement de" + " " + str(
-        humidite[0]) + " pour le 1er capteur," + " " + str(humidite[1]) + "" + " pour le second" + " et de" + " " + str(
-        humidite[2]) + " pour le dernier")
 
     # Vérification des données d'humidité
     humidite.sort()
-
     if humidite[1]-humidite[0]>0.08:
         del humidite[0]
     elif humidite[2]-humidite[1]>0.08:
@@ -163,18 +158,17 @@ while (True):
     # Volume à irriguer
     limite1 = 19.33
     limite2 = 15
-    volume_total = 12.6
 
     if 100*humidite > limite1:
         V_irrigation = ETR*10**(-2)*10.5
     else:
         if 100*humidite < limite2:
-            V_irrigation = (limite1-100*min(humidite))*volume_total
+            V_irrigation = (limite1-100*min(humidite))*12.6
         else:
-            V_irrigation = (28-100*min(humidite))*volume_total
+            V_irrigation = (28-100*min(humidite))*12.6
 
     # Planning d'irrigation
-    temps_irrigation = V_irrigation/1.5
+    temps_irrigation = V_irrigation/0.000416
     if temps_irrigation > 1200:
         temps_irrigation = 1200
 
@@ -183,51 +177,4 @@ while (True):
     open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n")
     time.sleep(60 * 60)
 
-    # Example reading last sensor value
-    dataFile = None
-    try:  # urlopen not usable with "with"
-        url = "http://" +host +"/api/get/%21s_HUM1"
-        dataFile = urllib.urlopen(url, None, 20)
-        data = dataFile.read(80000)
-        print("HUM1=" + data.strip(delimiters))
-    except:
-        print(u"URL=" + (url if url else "") + \
-              u", Message=" + traceback.format_exc())
-    if dataFile:
-        dataFile.close()
-
-    # Example reading all values of the last hour (60 minutes of 60 seconds)
-    dataFile = None
-    try:  # urlopen not usable with "with"
-        url = "http://" +host +"/api/grafana/query"
-        now = get_timestamp()
-        gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
-              'targets': [{'target': 'HUM1'}, {'target': 'HUM2'}, {'target': 'HUM3'}]}
-        data = json.dumps(gr)
-        print(data)
-        dataFile = urllib.urlopen(url, data, 20)
-        result = json.load(dataFile)
-        if result:
-            print(result)
-            for target in result:
-                # print target
-                index = target.get('target')
-                for datapoint in target.get('datapoints'):
-                    value = datapoint[0]
-                    stamp = datapoint[1] / 1000
-                    print(index + ": " + formatDate(stamp) + " = " + str(value))
-    except:
-        print(u"URL=" + (url if url else "") + \
-              u", Message=" + traceback.format_exc())
-    if dataFile:
-        dataFile.close()
-
-    timestamp = get_timestamp()
-    # erase the current file and open the valve in 30 seconds
-    open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
-    # append to the file and close the valve 1 minute later
-    open("valve.txt", 'a').write(str(timestamp + 90) + ";0\n")
-    print("valve.txt ready.")
-    # sleep for 5 minutes (in seconds)
-    time.sleep(5 * 60)
 
