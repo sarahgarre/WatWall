@@ -134,39 +134,37 @@ while (True):
 
     # Recueil des dernières valeurs de tension des capteurs d'humidité
     dataFile = None
-    humidite = [] # liste stockant les dernières valeurs d'humidité
+    humidite = [[] for b in range(2)] # liste stockant les dernières valeurs d'humidité avant puis après irrigation
     for g in range(1, 4): # boucle collectant les 3 dernières valeurs de nos capteurs d'humidité
         try:  # urlopen not usable with "with"
             url = "http://" + host + "/api/get/%21s_HUM" + unicode(g)
             dataFile = urllib.urlopen(url, None, 20)
             data = dataFile.read(80000)
-            humidite.append((float(data.strip(delimiters)))) # ajout de la valeur receuillie en fin de liste
+            humidite[0].append((float(data.strip(delimiters)))) # ajout de la valeur receuillie en fin de liste
         except:
             print(u"URL=" + (url if url else "") + \
                   u", Message=" + traceback.format_exc())
         if dataFile:
             dataFile.close()
 
+    # Vérification des données d'humidité
+    humidite[0].sort() # trie les valeurs d'humidité dans l'ordre croissant
+    if humidite[0][1]-humidite[0][0]>0.08: # regarde si la différence entre la valeur minimale et la valeur centrale est strictement supérieure à 8%
+        del humidite[0][0] # si le test est vrai alors la valeur comparée à la valeur centrale est rejetée car considérée comme erronée
+
     # Conversion des tensions en teneur en eau
     for o in range(0,3):
-        humidite[o]=((35.24*humidite[o]-15.44)/(humidite[o]-0.3747))/100
-
-    # Vérification des données d'humidité
-    humidite.sort() # trie les valeurs d'humidité dans l'ordre croissant
-    if humidite[1]-humidite[0]>0.08: # regarde si la différence entre la valeur minimale et la valeur centrale est strictement supérieure à 8%
-        del humidite[0] # si le test est vrai alors la valeur comparée à la valeur centrale est rejetée car considérée comme erronée
-    elif humidite[2]-humidite[1]>0.08: # même test avec la valeur maximale par rapport à la valeur centrale
-        del humidite[2]
+        humidite[0][o]=((35.24*humidite[0][o]-15.44)/(humidite[0][o]-0.3747))/100
 
     # Volume à irriguer
     limite1 = 0.1816 # définition des limites de teneur en eau conditionnant la suite du choix de l'irrigation
     limite2 = 0.13
 
-    if humidite[0] < limite1 : # test si au moins une des valeurs d'humidité est inférieure à limite1
-        if humidite < limite2: # même test pour limite2
-            V_irrigation=(0.285-min(humidite))*12.6 # cas où une valeur est inférieure à limite2
+    if humidite[0][0] < limite1 : # test si au moins une des valeurs d'humidité est inférieure à limite1
+        if humidite[0][0] < limite2: # même test pour limite2
+            V_irrigation=(0.285-humidite[0][0])*12.6 # cas où une valeur est inférieure à limite2
         else:
-            V_irrigation = (limite1-min(humidite))*12.6 # cas où une valeur est inférieure à limite1 mais pas limite2
+            V_irrigation = (limite1-humidite[0][0])*12.6 # cas où une valeur est inférieure à limite1 mais pas limite2
     else:
         V_irrigation = ETR * 10 ** (-2) * 10.5 # cas où aucune valeur n'est inférieure à limite1
 
@@ -192,6 +190,41 @@ while (True):
         open("valve.txt", 'a').write(str(timestamp + n * 3600) + ";1\n")
         open("valve.txt", 'a').write(str(timestamp + n * 3600 + temps_irrigation) + ";0\n")
 
-    time.sleep(24*60 * 60) # fait une pause dans l'éxecution d'une journée
+    time.sleep(4 * 60 * 60)  # fait une pause de 4h dans l'éxécution
+
+    # Vérification pour voir si l'irrigation a bien été effectuée
+
+    # Recueil des nouvelles dernières valeurs de tension des capteurs d'humidité
+    dataFile = None
+    for g in range(1, 4): # boucle collectant les 3 dernières valeurs de nos capteurs d'humidité
+        try:  # urlopen not usable with "with"
+            url = "http://" + host + "/api/get/%21s_HUM" + unicode(g)
+            dataFile = urllib.urlopen(url, None, 20)
+            data = dataFile.read(80000)
+            humidite[1].append((float(data.strip(delimiters)))) # ajout de la valeur receuillie en fin de liste
+        except:
+            print(u"URL=" + (url if url else "") + \
+                  u", Message=" + traceback.format_exc())
+        if dataFile:
+            dataFile.close()
+
+    # Conversion des tensions en teneur en eau
+    for o in range(0,3):
+        humidite[1][o]=((35.24*humidite[1][o]-15.44)/(humidite[1][o]-0.3747))/100
+
+    # Vérification de l'augmentation de l'humidité pour l'horizon le plus sec
+    humidite[1].sort() # trie les valeurs fraichement receuillies
+    if len(humidite[0])=2: # regarde si la valeur minimale 3h plus tôt a été supprimée
+        if humidite[1][1]-humidite[0][0]>0: # regarde si la différence d'humidité de l'horizon le plus sec est positive, signe que l'irrigation a bien eu lieu
+            time.sleep(20 * 60 * 60)  # fait une pause de 21h dans l'éxécution
+        else:
+            continue # permet de recommencer tout le processus d'irrigation car celui-ci n'a pas marché comme prévu
+    else:
+        if humidite[1][0]-humidite[0][0]>0:
+            time.sleep(20 * 60 * 60)  # fait une pause de 21h dans l'éxécution
+        else:
+            continue
+
+
 
 
