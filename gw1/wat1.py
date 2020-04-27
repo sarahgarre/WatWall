@@ -171,7 +171,7 @@ while (True):
     # Planning d'irrigation
     temps_irrigation = round(V_irrigation/0.000416) # calcul le temps correspondant au volume précédemment calculé
     timestamp = get_timestamp()
-
+    n=0
     if temps_irrigation<=1200:
         open("valve.txt", 'w').write(
             str(timestamp) + ";1\n")  # crée un nouveau planning et demande d'ouvrir la vanne à l'instant même
@@ -189,8 +189,8 @@ while (True):
             n+=1
         open("valve.txt", 'a').write(str(timestamp + n * 3600) + ";1\n")
         open("valve.txt", 'a').write(str(timestamp + n * 3600 + temps_irrigation) + ";0\n")
-
-    time.sleep(4 * 60 * 60)  # fait une pause de 4h dans l'éxécution
+    print(n)
+    time.sleep(4+n * 60 * 60)  # fait une pause de 4h dans l'éxécution après la dernière heure d'irrigation
 
     # Vérification pour voir si l'irrigation a bien été effectuée
 
@@ -216,12 +216,12 @@ while (True):
     humidite[1].sort() # trie les valeurs fraichement receuillies
     if len(humidite[0])=2: # regarde si la valeur minimale 3h plus tôt a été supprimée
         if humidite[1][1]-humidite[0][0]>0: # regarde si la différence d'humidité de l'horizon le plus sec est positive, signe que l'irrigation a bien eu lieu
-            time.sleep(20 * 60 * 60)  # fait une pause de 21h dans l'éxécution
+            time.sleep(20 * 60 * 60)  # fait une pause de 20h dans l'éxécution
         else:
             continue # permet de recommencer tout le processus d'irrigation car celui-ci n'a pas marché comme prévu
     else:
         if humidite[1][0]-humidite[0][0]>0:
-            time.sleep(20 * 60 * 60)  # fait une pause de 21h dans l'éxécution
+            time.sleep(20 * 60 * 60)  # fait une pause de 20h dans l'éxécution
         else:
             continue
 
