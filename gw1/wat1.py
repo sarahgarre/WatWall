@@ -100,7 +100,7 @@ while (True):
 
     # Calcul de l'ETP des 24 dernières heures
     ET0 = 0 # initialisation de la valeur de ET0
-    Kc = 0.7 # valeur du coefficient cultural
+    Kc = 1 # valeur du coefficient cultural
     v = [] # variable permettant de trouver la taille de ma boucle for car sur 24h il se peut que l'on ne collecte pas exactement 1440 valeurs, cela évite donc de faire planter ma boucle for
     for i in range(0, len(meteo)): # stocke dans ma liste le nombre de données collectées sur l'heure précédente pour chaque capteur
         v.append(len(meteo[i]))
