@@ -71,14 +71,14 @@ if dataFile:
 # Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
 while (True):
 
-    # Receuil des données météo de l'heure précédente et nécessaires au calcul de l'ETP
+    # Receuil des données météo des 24 dernières heures et nécessaires au calcul de l'ETP
     dataFile = None
-    meteo = [[] for i in range(6)]
-    j = 0
+    meteo = [[] for i in range(6)] # tableau permettant le stockage des valeurs receuillies
+    j = 0 # variable de changement de colonne dans le tableau
     try:  # urlopen not usable with "with"
         url = "http://" + host + "/api/grafana/query"
         now = get_timestamp()
-        gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
+        gr = {'range': {'from': formatDateGMT(now - (24 * 60 * 60)), 'to': formatDateGMT(now)}, \
               'targets': [{'target': 'SDI0'}, {'target': 'SDI4'}, {'target': 'SDI7'}, {'target': 'SDI8'},
                           {'target': 'SDI9'}, {'target': 'SDI10'}, ]}
         data = json.dumps(gr)
@@ -90,32 +90,32 @@ while (True):
                 for datapoint in target.get('datapoints'):
                     value = datapoint[0]
                     stamp = datapoint[1] / 1000
-                    meteo[j].append(float(value))
-                j += 1
+                    meteo[j].append(float(value)) # ajoute les données dans le tableau en dernière ligne de la colonne j
+                j += 1 # permet de passer à la colonne suivante
     except:
         print(u"URL=" + (url if url else "") + \
               u", Message=" + traceback.format_exc())
     if dataFile:
         dataFile.close()
 
-    # Calcul de l'ETP de l'heure précédente
-    ET0 = 0
-    Kc = 0.7
-    v = []
-    for i in range(0, len(meteo)):
+    # Calcul de l'ETP des 24 dernières heures
+    ET0 = 0 # initialisation de la valeur de ET0
+    Kc = 1 # valeur du coefficient cultural
+    v = [] # variable permettant de trouver la taille de ma boucle for car sur 24h il se peut que l'on ne collecte pas exactement 1440 valeurs, cela évite donc de faire planter ma boucle for
+    for i in range(0, len(meteo)): # stocke dans ma liste le nombre de données collectées sur l'heure précédente pour chaque capteur
         v.append(len(meteo[i]))
-    for q in range(0, min(v)):
+    for q in range(0, min(v)): # calcul de l'ET0 par minute avec les données précédemment collectées dans meteo
         delta = (4098 * (0.6108 * math.exp((17.27 * meteo[2][q]) / (meteo[2][q] + 237.3)))) / (
                     (meteo[2][q] + 237.3) ** 2)
         es = 100 * meteo[3][q] / meteo[5][q]
         ea = meteo[3][q]
-        altitude = 150  # au hasard, a demander, pas hyper important en belgique ca va pas varier de ouf
+        altitude = 106  # pour Mont-Saint-Guilbert
         albedo = 0.2
         Rs = meteo[0][q] * 10 ** (-6) * 60
         Rns = (1 - albedo) * Rs
         lat = 50
         sigma = 4.903 * 10 ** (-9) / (24 * 60)
-        J = (date.today()-date(2020,1,1)).days+1
+        J = (date.today()-date(2020,1,1)).days+1 # représente le nombre de jours passés depuis le 1er janvier 2020 compris
         dr = 1 + 0.033 * math.cos((6.28 / 365) * J)
         declinaison = 0.409 * math.sin((6.28 / 365) * J - 1.39)
         ws = math.acos(-math.tan(lat) * math.tan(declinaison))
@@ -128,106 +128,103 @@ while (True):
         Rn = Rns - Rnl
         gamma = 0.665 * meteo[4][q] * 10 ** (-3)
         vitesse_du_vent = meteo[1][q]
-        # essayons deja sans prendre les longwave
         ET0 += (0.408 * delta * Rn + gamma * (0.625 / (273 + meteo[2][q])) * vitesse_du_vent * (es - ea)) / (
-                    delta + gamma * (1 + 0.34 * vitesse_du_vent))
-    ETR = ET0 * Kc
-    print("L'ETR est de" + " " + str(ETR)+ " "+"mm")
+                    delta + gamma * (1 + 0.34 * vitesse_du_vent)) # stocke la somme des ET0 calculés pour chaque minute
+    ETR = ET0 * Kc # valeur réelle de l'ETP en considérant le type et le stade de la culture
 
-    # Recueil des dernières valeurs d'humidité
+    # Recueil des dernières valeurs de tension des capteurs d'humidité
     dataFile = None
-    humidite = []
-    for g in range(1, 4):
+    humidite = [[] for b in range(2)] # liste stockant les dernières valeurs d'humidité avant puis après irrigation
+    for g in range(1, 4): # boucle collectant les 3 dernières valeurs de nos capteurs d'humidité
         try:  # urlopen not usable with "with"
             url = "http://" + host + "/api/get/%21s_HUM" + unicode(g)
             dataFile = urllib.urlopen(url, None, 20)
             data = dataFile.read(80000)
-            humidite.append(float(data.strip(delimiters)))
+            humidite[0].append((float(data.strip(delimiters)))) # ajout de la valeur receuillie en fin de liste
         except:
             print(u"URL=" + (url if url else "") + \
                   u", Message=" + traceback.format_exc())
         if dataFile:
             dataFile.close()
-    print("Les dernières valeurs d'humidité sont respectivement de" + " " + str(
-        humidite[0]) + " pour le 1er capteur," + " " + str(humidite[1]) + "" + " pour le second" + " et de" + " " + str(
-        humidite[2]) + " pour le dernier")
 
     # Vérification des données d'humidité
-    humidite.sort()
+    humidite[0].sort() # trie les valeurs d'humidité dans l'ordre croissant
+    if humidite[0][1]-humidite[0][0]>0.08: # regarde si la différence entre la valeur minimale et la valeur centrale est strictement supérieure à 8%
+        del humidite[0][0] # si le test est vrai alors la valeur comparée à la valeur centrale est rejetée car considérée comme erronée
 
-    if humidite[1]-humidite[0]>=0.08:
-        del humidite[0]
-    elif humidite[2]-humidite[1]>=0.08:
-        del humidite[2]
+    # Conversion des tensions en teneur en eau
+    for o in range(0,3):
+        humidite[0][o]=((35.24*humidite[0][o]-15.44)/(humidite[0][o]-0.3747))/100
 
     # Volume à irriguer
-    limite1 = "à calculer"
-    limite2 = "à calculer"
-    volume_mur = "à calculer"
+    limite1 = 0.1816 # définition des limites de teneur en eau conditionnant la suite du choix de l'irrigation
+    limite2 = 0.13
 
-    if humidite > limite1:
-        V_irrigation = "à calculer"
-    else:
-        if humidite < limite2:
-            V_irrigation = "à calculer"
+    if humidite[0][0] < limite1 : # test si au moins une des valeurs d'humidité est inférieure à limite1
+        if humidite[0][0] < limite2: # même test pour limite2
+            V_irrigation=(0.285-humidite[0][0])*12.6 # cas où une valeur est inférieure à limite2
         else:
-            V_irrigation = "à calculer"
+            V_irrigation = (limite1-humidite[0][0])*12.6 # cas où une valeur est inférieure à limite1 mais pas limite2
+    else:
+        V_irrigation = ETR * 10 ** (-2) * 10.5 # cas où aucune valeur n'est inférieure à limite1
 
     # Planning d'irrigation
-    temps_irrigation = "V_irrigation/débit total(L/s)"
-    if temps_irrigation > 1200:
-        temps_irrigation = 1200
-
+    temps_irrigation = round(V_irrigation/0.000416) # calcul le temps correspondant au volume précédemment calculé
     timestamp = get_timestamp()
-    open("valve.txt", 'a').write(str(timestamp) + ";1\n")
-    open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n")
-    time.sleep(60 * 60)
+    n=0
+    if temps_irrigation<=1200:
+        open("valve.txt", 'w').write(
+            str(timestamp) + ";1\n")  # crée un nouveau planning et demande d'ouvrir la vanne à l'instant même
+        open("valve.txt", 'a').write(str(
+            timestamp + temps_irrigation) + ";0\n")  # demande la fermeture de la vanne après le temps d'irrigation calculé plus haut
+    else:
+        open("valve.txt", 'w').write(str(timestamp) + ";1\n")
+        open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n")
+        temps_irrigation-=1200
+        n=1
+        while temps_irrigation>1200:# implémente le temps non applicable dans cette heure aux heures d'après
+            open("valve.txt", 'a').write(str(timestamp + n*3600) + ";1\n")
+            open("valve.txt", 'a').write(str(timestamp +n*3600+1200) + ";0\n")
+            temps_irrigation-=1200
+            n+=1
+        open("valve.txt", 'a').write(str(timestamp + n * 3600) + ";1\n")
+        open("valve.txt", 'a').write(str(timestamp + n * 3600 + temps_irrigation) + ";0\n")
+    print(n)
+    time.sleep(4+n * 60 * 60)  # fait une pause de 4h dans l'éxécution après la dernière heure d'irrigation
 
-    # Example reading last sensor value
+    # Vérification pour voir si l'irrigation a bien été effectuée
+
+    # Recueil des nouvelles dernières valeurs de tension des capteurs d'humidité
     dataFile = None
-    try:  # urlopen not usable with "with"
-        url = "http://" +host +"/api/get/%21s_HUM1"
-        dataFile = urllib.urlopen(url, None, 20)
-        data = dataFile.read(80000)
-        print("HUM1=" + data.strip(delimiters))
-    except:
-        print(u"URL=" + (url if url else "") + \
-              u", Message=" + traceback.format_exc())
-    if dataFile:
-        dataFile.close()
+    for g in range(1, 4): # boucle collectant les 3 dernières valeurs de nos capteurs d'humidité
+        try:  # urlopen not usable with "with"
+            url = "http://" + host + "/api/get/%21s_HUM" + unicode(g)
+            dataFile = urllib.urlopen(url, None, 20)
+            data = dataFile.read(80000)
+            humidite[1].append((float(data.strip(delimiters)))) # ajout de la valeur receuillie en fin de liste
+        except:
+            print(u"URL=" + (url if url else "") + \
+                  u", Message=" + traceback.format_exc())
+        if dataFile:
+            dataFile.close()
 
-    # Example reading all values of the last hour (60 minutes of 60 seconds)
-    dataFile = None
-    try:  # urlopen not usable with "with"
-        url = "http://" +host +"/api/grafana/query"
-        now = get_timestamp()
-        gr = {'range': {'from': formatDateGMT(now - (1 * 60 * 60)), 'to': formatDateGMT(now)}, \
-              'targets': [{'target': 'HUM1'}, {'target': 'HUM2'}, {'target': 'HUM3'}]}
-        data = json.dumps(gr)
-        print(data)
-        dataFile = urllib.urlopen(url, data, 20)
-        result = json.load(dataFile)
-        if result:
-            print(result)
-            for target in result:
-                # print target
-                index = target.get('target')
-                for datapoint in target.get('datapoints'):
-                    value = datapoint[0]
-                    stamp = datapoint[1] / 1000
-                    print(index + ": " + formatDate(stamp) + " = " + str(value))
-    except:
-        print(u"URL=" + (url if url else "") + \
-              u", Message=" + traceback.format_exc())
-    if dataFile:
-        dataFile.close()
+    # Conversion des tensions en teneur en eau
+    for o in range(0,3):
+        humidite[1][o]=((35.24*humidite[1][o]-15.44)/(humidite[1][o]-0.3747))/100
 
-    timestamp = get_timestamp()
-    # erase the current file and open the valve in 30 seconds
-    open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
-    # append to the file and close the valve 1 minute later
-    open("valve.txt", 'a').write(str(timestamp + 90) + ";0\n")
-    print("valve.txt ready.")
-    # sleep for 5 minutes (in seconds)
-    time.sleep(5 * 60)
+    # Vérification de l'augmentation de l'humidité pour l'horizon le plus sec
+    humidite[1].sort() # trie les valeurs fraichement receuillies
+    if len(humidite[0])=2: # regarde si la valeur minimale 3h plus tôt a été supprimée
+        if humidite[1][1]-humidite[0][0]>0: # regarde si la différence d'humidité de l'horizon le plus sec est positive, signe que l'irrigation a bien eu lieu
+            time.sleep(20 * 60 * 60)  # fait une pause de 20h dans l'éxécution
+        else:
+            continue # permet de recommencer tout le processus d'irrigation car celui-ci n'a pas marché comme prévu
+    else:
+        if humidite[1][0]-humidite[0][0]>0:
+            time.sleep(20 * 60 * 60)  # fait une pause de 20h dans l'éxécution
+        else:
+            continue
+
+
+
 

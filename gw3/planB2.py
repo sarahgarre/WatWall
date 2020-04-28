@@ -10,7 +10,7 @@ Q=1000           # discharge [cm3/hr]
 Kc=1             # cultural coefficient [-]
 
 user = "GW3"
-test = False
+test = True
 # True to run the code locally
 # False to implement the code on the server
 
@@ -66,7 +66,7 @@ for row in reader:                                          # loop to go through
     # Calculate irrigation time
     ET0=float(row[1])                                       # Daily reference evapotranspiration [mm/day]
     ET=Kc*ET0/10                                            # Daily evapotranspiration [cm/day]
-    time_irrig=ET*A/Q*60*60                                 # Daily watering time based on ET [sec]
+    time_irrig=int(ET*A/Q*60*60)                            # Daily watering time based on ET [sec]
 
     # open the valve the next day (+ 24*60*60) at 00:00
     outfile.write(str(epoch + 24*60*60) + ";1\n")
