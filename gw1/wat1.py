@@ -179,6 +179,9 @@ while (True):
             moyenne_humidite[0]= humidite[0]
         else:
             print("aller chercher l'ET0 dans les données des années précédentes")
+            ETR = ET0 * Kc
+            V_irrigation = ETR * 10 ** (-2) * 10.5
+            moyenne_humidite[0] = humidite[0]
 
     # Le volume d'eau est-il suffisant ?
     if V_irrigation < 0.25:  # regarde si le volume à irriguer est assez important, on fait cela à cause de l'incertitude de précision d'arrosage des petits volumes
