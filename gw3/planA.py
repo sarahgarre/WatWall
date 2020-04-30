@@ -313,27 +313,37 @@ while (True):
     A = 1920                    # box area [cm2]
     H = 12                      # box eight [cm]
     Q = 1000                    # discharge [cm3/hr]
-    theta_threshold=0.25        # water content value below which irrigation is switched on [cm3/cm3]
-    theta_fc=0.30               # water content at field capacity [cm3/cm3]
+    theta_threshold_box = 0.20  # water content value below which irrigation is switched on in the box [cm3/cm3]
+    theta_threshold = [theta_threshold_box, theta_threshold_box, theta_threshold_box]
+    theta_fc_box = 0.30         # water content at field capacity in the box [cm3/cm3]
+    theta_fc = [theta_fc_box, theta_fc_box, theta_fc_box]
 
     # Irrigation time
-    V_irrig = (theta_fc - theta_threshold) * A * H      # Amount of water [cm3]
-    time_irrig = V_irrig/Q                              # Irrigation time [hr]
+    time_irrig = []
+    for i in range(0,len(theta_fc)):
+        vol = (theta_fc[i] - theta_threshold[i]) * A * H    # Irrigation volume [cm3]
+        time_irrig.append(vol/Q*3600)                       # Irrigation time [s]
+        del vol
+    print 'time_irrig [s]', time_irrig
 
     # Find the minimal water content
     index_min = theta_mean.index(min(theta_mean))
+    print 'theta_mean min [cm3/cm3]:',theta_mean[index_min]
 
     # Choose to irrigate or not
-    if theta_mean[index_min] <= theta_threshold:
+    if theta_mean[index_min] < theta_threshold [index_min]:
         timestamp = get_timestamp()
         # erase the current file and open the valve in 30 seconds
         open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
         # append to the file and close the valve time_irrig later
-        open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig) + ";0\n")
+        open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig[index_min]) + ";0\n")
+        print 'Irrigation is needed'
+        print 'Open the valve for', time_irrig[index_min]/3600, 'hour'
 
     # Processed finished
     print("valve.txt ready.")
-    # sleep for 1 hour (in seconds)
-    time.sleep(60 * 60)
+
+    # sleep for 24 hours (in seconds)
+    time.sleep(24 * 60)
 
 
