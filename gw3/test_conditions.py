@@ -201,8 +201,11 @@ while (True):
 
     # Check for conditions
     if (
+            # NaN values
             all(x == False for x in HUM7_missing) and all(x == False for x in HUM8_missing) and all(x == False for x in HUM9_missing) and
+            # Standard deviation
             all(x < SD_threshold for x in V_SD) and
+            # Outliers
             all(x > outlier_min for x in HUM7) and all(x > outlier_min for x in HUM8) and all(x > outlier_min for x in HUM9) and
             all(x < outlier_max for x in HUM7) and all(x < outlier_max for x in HUM8) and all(x < outlier_max for x in HUM9)
             ):
