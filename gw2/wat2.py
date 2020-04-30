@@ -11,7 +11,7 @@ import socket
 import traceback
 import urllib2 as urllib
 
-user = "GW1"
+user = "GW2"
 test = False
 
 if test:
