@@ -69,7 +69,7 @@ if dataFile:
     dataFile.close()
 
 # Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
-while (True):
+#while (True):
 
     # Recueil des dernières valeurs de tension des capteurs d'humidité
     dataFile = None
@@ -150,7 +150,7 @@ while (True):
                     (meteo[2][q] + 237.3) ** 2)
             es = 100 * meteo[3][q] / meteo[5][q]
             ea = meteo[3][q]
-            altitude = 106  # pour Mont-Saint-Guilbert
+            altitude = 106  # pour Mont-Saint-Guilbert (159 si Gembloux)
             albedo = 0.2
             Rs = meteo[0][q] * 10 ** (-6) * 60
             Rns = (1 - albedo) * Rs
@@ -161,7 +161,7 @@ while (True):
             dr = 1 + 0.033 * math.cos((6.28 / 365) * J)
             declinaison = 0.409 * math.sin((6.28 / 365) * J - 1.39)
             ws = math.acos(-math.tan(lat) * math.tan(declinaison))
-            Ra = (60 / 3.14) * 0.082 * dr * (
+            Ra = (1/ 3.14) * 0.082 * dr * (
                     ws * math.sin(lat) * math.sin(declinaison) + math.sin(ws) * math.cos(lat) * math.cos(
                 declinaison))
             Rso = (0.75 + 210 ** (-5) * altitude) * Ra
