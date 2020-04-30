@@ -324,7 +324,7 @@ while (True):
     time_irrig = []
     for i in range(0, len(theta_fc)):
         vol = (theta_fc[i] - theta_threshold[i]) * A * H  # Irrigation volume [cm3]
-        time_irrig.append(vol / Q * 3600)  # Irrigation time [s]
+        time_irrig.append(int(vol / Q * 3600))  # Irrigation time [s]
         del vol
     print 'time_irrig [s]', time_irrig
 
