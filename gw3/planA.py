@@ -111,18 +111,18 @@ while (True):
         gr = {'range': {'from': formatDateGMT(now - (1 * 5 * 60)), 'to': formatDateGMT(now)}, \
               'targets': [{'target': 'HUM7'}, {'target': 'HUM8'}, {'target': 'HUM9'}, {'target': 'SDI11'}]}
         data = json.dumps(gr)
-        print(data)
+        #print(data)                # Display data
         dataFile = urllib.urlopen(url, data, 20)
         result = json.load(dataFile)
         if result:
-            print(result)
+            #print(result)          # Display results
             for target in result:
                 # print target
                 index = target.get('target')
                 for datapoint in target.get('datapoints'):
                     value = datapoint[0]
                     stamp = datapoint[1] / 1000
-                    print(index + ": " + formatDate(stamp) + " = " + str(value))
+                    #print(index + ": " + formatDate(stamp) + " = " + str(value))
 
     except:
         print(u"URL=" + (url if url else "") + \
