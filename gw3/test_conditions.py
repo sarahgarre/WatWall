@@ -54,15 +54,18 @@ else:
 def get_timestamp():
     return int(time.time())
 
+
 # Transform an EPOCH time in a lisible date (for Grafana)
 def formatDate(epoch):
     dt = datetime.fromtimestamp(epoch)
     return dt.isoformat()
 
+
 # Transform an EPOCH time in a lisible date (for Grafana)
 def formatDateGMT(epoch):
     dt = datetime.fromtimestamp(epoch - (2 * 60 * 60))  # We are in summer and in Belgium !
     return dt.isoformat()
+
 
 delimiters = ' \t\n\r\"\''
 
@@ -137,7 +140,7 @@ while (True):
     # 1. Parameters
 
     # Acceptable standard deviation
-    SD_threshold = 0.03         # Humidity sensor uncertainty[-]
+    SD_threshold = 0.03  # Humidity sensor uncertainty[-]
 
     # Outliers
     outlier_max = 0.9  # Maximal water content that can be encountered [cm3/cm3]
@@ -170,6 +173,8 @@ while (True):
         HUM7_missing.append(math.isnan(HUM7[i]))
         HUM8_missing.append(math.isnan(HUM8[i]))
         HUM9_missing.append(math.isnan(HUM9[i]))
+    print HUM7_missing
+
     # ------------------------------
     # Calculate Standard deviation of the signal
 
@@ -194,145 +199,18 @@ while (True):
     print 'V_var [V]:', V_var
     print 'V_SD [-]:', V_SD
 
-    # ___________________________________________________________________________
-    # c. Convert analog signal [V] into digital signal [cm3/cm3]
-    """
-    1. With the calibration equation provided by the manufacturer
-    Equation:   VWC = (-3.14E-07 * mV^2) + (1.16E-03 * mV) – 6.12E-01
-    From:       LICOR, 8100_TechTip_EC-5_Probe_Connection_TTP24.pdf
-    
-    # Computation
-    for i in range(3):  # loop on humidity sensors
-        length_result = len(result[i].get('datapoints'))
-        for j in range(0, length_result):   # loop on values
-            mV = result[i].get('datapoints')[j][0] /1000            # divided by 1000 to convert to mV
-            result[i].get('datapoints')[j][0] = (-3.14E-07 * mV**2) + (1.16E-03 * mV) - 6.12E-01
-            print result[i].get('datapoints')[j][0]
-    """
-
-    """
-        1. With the calibration equation of Cedric Bernard
-        Equation:   VWC = (0.3524 * V - 0.1554)/(V - 0.3747)
-        From: TFE of Cedric Bernard      
-    """
-
-    # Computation
-    for i in range(3):  # loop on humidity sensors
-        length_result = len(result[i].get('datapoints'))
-        for j in range(0, length_result):  # loop on values
-            V = result[i].get('datapoints')[j][0]           # Creat a variable V (voltage)
-            result[i].get('datapoints')[j][0] = (0.3524 * V - 0.1554)/(V - 0.3747)  # Calibration equation
-            #print result[i].get('datapoints')[j][0]     # Show results
+    # Check for conditions
+    if (
+            all(x == False for x in HUM7_missing) and all(x == False for x in HUM8_missing) and all(x == False for x in HUM9_missing) and
+            all(x < SD_threshold for x in V_SD) and
+            all(x > outlier_min for x in HUM7) and all(x > outlier_min for x in HUM8) and all(x > outlier_min for x in HUM9) and
+            all(x < outlier_max for x in HUM7) and all(x < outlier_max for x in HUM8) and all(x < outlier_max for x in HUM9)
+            ):
+        print 'Plan A can be run'
+    else:
+        print 'Plan A can not be run => Start plan B'
 
 
-    # ___________________________________________________________________________
-    # d. Temperature correction
-    """
-    Equation:   VWC = VWC + O.OO3 * (Tsensor - Tlab)
-    From:       Nemali, Krishna S., Francesco Montesano, Sue K. Dove, and Marc W. van Iersel. 2007. 
-                “Calibration and Performance of Moisture Sensors in Soilless Substrates: ECH2O and Theta Probes.” 
-                Scientia Horticulturae 112 (2): 227–34. https://doi.org/10.1016/j.scienta.2006.12.013.
-    """
-
-    # Parameters
-    coef_T = 0.003      # sensitivity to temperature [cm3/cm3/°C]
-    Tlab = 22           # lab temperature during calibration [°C]
-
-    # Computation
-    for i in range(3):  # loop on humidity sensors
-        length_result = len(result[i].get('datapoints'))
-        for j in range(0, length_result):   # loop on values
-            SWC = result[i].get('datapoints')[j][0]
-            Tsensor = result[3].get('datapoints')[j][0]
-            result[i].get('datapoints')[j][0] = SWC + coef_T * (Tsensor - Tlab)
-
-    # ___________________________________________________________________________
-    # e. Calibration equation
-
-    # ----------------------------------------------------
-    # 1. Calibration equation available in the EC-5 datasheet
-    """
-    Equation:   SWC = (1.3E−03 )(RAW) − 0.696
-    From:       METER. n.d. “EC-5 Manual Guide.”
-    
-    # Parameters
-    a = 1.3E-03
-    b = -0.696
-    HUM_name = ['HUM7', 'HUM8', 'HUM9'] # Humidity sensor's name
-
-    # Computation
-    for i in range(3):  # loop on humidity sensors
-        length_result = len(result[i].get('datapoints'))
-        print HUM_name[i]
-        for j in range(0, length_result):  # loop on values
-            SWC = result[i].get('datapoints')[j][0]
-            result[i].get('datapoints')[j][0] = a * SWC + b  # calculate the real value
-            print result[i].get('datapoints')[j][0]
-            
-    """
-
-    # ----------------------------------------------------
-    # 2. Calibration equations determined by experimentation
-    """
-    Equation:   VWC = a * ln(VWC) + b 
-    From:       Experimentation
-
-    # Parameters
-    calib = dict()  # Dictionary initialization
-
-    HUM_name = ['HUM7', 'HUM8', 'HUM9'] # Humidity sensor's name
-    calib[HUM_name[0]] = [0.4019, 1.2082] # a and b parameters
-    calib[HUM_name[1]] = [0.457, 1.2789]
-    calib[HUM_name[2]] = [0.4808, 1.3012]
-
-    # Computation
-    for i in range(3):  # loop on humidity sensors
-        length_result = len(result[i].get('datapoints'))
-        print HUM_name[i]
-        for j in range(0, length_result):  # loop on values
-            SWC = result[i].get('datapoints')[j][0]
-            coef = calib.get(HUM_name[i])  # extract the coefficient
-            result[i].get('datapoints')[j][0] = coef[0] * SWC + coef[1]  # calculate the real value
-            print result[i].get('datapoints')[j][0]
-    """
-
-    # ___________________________________________________________________________
-    # f. Irrigation
-
-    # calculate the average water content
-    theta_mean = []             # Initialization of the list containing mean humidity sensors
-    for i in range(3):
-        length_result = len(result[i].get('datapoints'))
-        theta_sum = 0
-        for j in range(0, length_result):
-            theta_sum += result[i].get('datapoints')[j][0]
-        theta_mean.append(theta_sum / length_result)
-    print 'Mean water content [cm3/cm3]:', theta_mean
-
-    # Parameters
-    A = 1920                    # box area [cm2]
-    H = 12                      # box eight [cm]
-    Q = 1000                    # discharge [cm3/hr]
-    theta_threshold=0.25        # water content value below which irrigation is switched on [cm3/cm3]
-    theta_fc=0.30               # water content at field capacity [cm3/cm3]
-
-    # Irrigation time
-    V_irrig = (theta_fc - theta_threshold) * A * H      # Amount of water [cm3]
-    time_irrig = V_irrig/Q                              # Irrigation time [hr]
-
-    # Find the minimal water content
-    index_min = theta_mean.index(min(theta_mean))
-
-    # Choose to irrigate or not
-    if theta_mean[index_min] <= theta_threshold:
-        timestamp = get_timestamp()
-        # erase the current file and open the valve in 30 seconds
-        open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
-        # append to the file and close the valve time_irrig later
-        open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig) + ";0\n")
-
-    # Processed finished
-    print("valve.txt ready.")
     # sleep for 1 hour (in seconds)
     time.sleep(60 * 60)
 

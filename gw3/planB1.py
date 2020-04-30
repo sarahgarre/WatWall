@@ -12,6 +12,7 @@ import socket
 import traceback
 import urllib2 as urllib
 
+
 user = "GW3"
 test = True
 # True to run the code locally
@@ -136,9 +137,22 @@ while (True):
     # ___________________________________________________________________________
     # a. variable conversion
 
+    # Index of the variables in the result dict
+    index_Rn = 0            # Global radiation
+    index_rain = 1          # Rainfall
+    index_windspeed = 2     # Wind speed
+    index_Tair = 3          # Air temperature
+    index_ea = 4            # Vapor pressure
+    index_patm = 5          # Atmospheric pressure
+    index_RH = 6            # Relative humidity*
+
+    # Number of variables
+    num_var = 7
+
     # global radiation (SDI0): [W/m2] -> [MJ/m2/day]
-    index_res=0                                     # Index in the result dict
+    index_res=index_Rn                              # Index in the result dict
     Rn = 0                                          # Sum initialization
+    Rn_list=[]
     length_result = len(result[index_res].get('datapoints'))
     for i in range(0, length_result):
         Rn += 60*result[index_res].get('datapoints')[i][0]     # Calculate sum [J/m2/day]
@@ -147,7 +161,7 @@ while (True):
     print'Rn=',Rn,'MJ/m2/day'
 
     # wind speed (SDI4) : mean value over 24 hours [m/s]
-    index_res = 2                                           # Index in the result dict
+    index_res = index_windspeed                             # Index in the result dict
     length_result = len(result[index_res].get('datapoints'))
     u_sum = 0                                               # Sum initialization
     for j in range(0, length_result):
@@ -156,7 +170,7 @@ while (True):
     print'u =',u,'m/s'
 
     # temperature (SDI7) : mean value over 24 hours [°C]
-    index_res=3                                     # Index in the result dict
+    index_res = index_Tair                          # Index in the result dict
     length_result = len(result[index_res].get('datapoints'))
     T_sum = 0                                       # Sum initialization
     for j in range(0, length_result):
@@ -165,7 +179,7 @@ while (True):
     print'T =',T,'°C'
 
     # actual vapor pressure (SDI8) : mean value over 24 hours [kPa]
-    index_res = 4                                           # Index in the result dict
+    index_res = index_ea                                    # Index in the result dict
     length_result = len(result[index_res].get('datapoints'))
     e_sum = 0  # Sum initialization
     for j in range(0, length_result):
@@ -174,7 +188,7 @@ while (True):
     print'e_a =',e_a,'kPa'
 
     # atmospheric pressure (SDI9) : mean value over 24 hours [kPa]
-    index_res=5                                             # Index in the result dict
+    index_res = index_patm                                  # Index in the result dict
     length_result = len(result[index_res].get('datapoints'))
     p_sum = 0                                               # Sum initialization
     for j in range(0, length_result):
@@ -183,7 +197,7 @@ while (True):
     print'p =',p,'kPa'
 
     # relative humidity (SDI10) : mean value over 24 hours [%]
-    index_res = 6                                           # Index in the result dict
+    index_res = index_RH                                    # Index in the result dict
     length_result = len(result[index_res].get('datapoints'))
     RH_sum = 0                                              # Sum initialization
     for j in range(0, length_result):
@@ -192,7 +206,7 @@ while (True):
     print'RH =',RH,'%'
 
     # rain (SDI1) : [mm/hr] -> [mm]
-    index_res = 1                                           # Index in the result dict
+    index_res = index_rain                              # Index in the result dict
     length_result = len(result[index_res].get('datapoints'))
     P = 0                                               # Sum initialization
     for j in range(0, length_result):
@@ -243,5 +257,44 @@ while (True):
     # append to the file and close the valve time_irrig later
     open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig) + ";0\n")
     print("valve.txt ready.")
+
+    # d. Draw graphs
+
+    # (*) Create time and data lists
+    # Initialization
+    date_list = []
+    Rn_list = []
+    rain_list = []
+    windspeed_list = []
+    Tair_list = []
+    ea_list = []
+    patm_list = []
+    RH_list = []
+    # Build lists
+    length_result = len(result[0].get('datapoints'))
+    for i in range(0, length_result):
+        # Date
+        date_epoch = result[0].get('datapoints')[i][1]/1000
+        date_datetime = time.strftime("%d %b %Y %H:%M:%S", time.localtime(date_epoch))
+        date_list.append(date_datetime)
+        # Solar radiation
+        Rn_list.append(result[index_Rn].get('datapoints')[i][0])
+        # Rainfall
+        rain_list.append(result[index_rain].get('datapoints')[i][0])
+        # Wind speed
+        windspeed_list.append(result[index_windspeed].get('datapoints')[i][0])
+        # Tair
+        Tair_list.append(result[index_Tair].get('datapoints')[i][0])
+        # Vaopor pressure
+        ea_list.append(result[index_ea].get('datapoints')[i][0])
+        # Atmospheric pressure
+        patm_list.append(result[index_patm].get('datapoints')[i][0])
+        # Relative humidity
+        RH_list.append(result[index_RH].get('datapoints')[i][0])
+    print 'Date :', date_list
+
+
+
     # sleep for 24 hours (in seconds)
     time.sleep(24 * 60 * 60)
+
