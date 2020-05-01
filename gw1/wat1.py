@@ -173,7 +173,7 @@ while (True):
             V_irrigation = ETR * 10 ** (-2) * 10.5 # volume qui a été perdu par évapotranspiration
             moyenne_humidite[0]= humidite[0]
         else:
-            # marche très bien si on met que des ET0 et J-1 me donne l'indice de l'ET0 d'aujourd'hui
+            # marche très bien si on met que des ET0 et J-1 me donne l'indice de l'ET0 d'aujourd'hui.
             float(open("ET0.csv", 'r').read().split("\n")[J - 1])
 
             ETR = ET0 * Kc
