@@ -13,7 +13,7 @@ import traceback
 import urllib2 as urllib
 
 user = "GW3"
-test = False
+test = True
 # True to run the code locally
 # False to implement the code on the server
 
@@ -315,9 +315,9 @@ while (True):
     A = 1920  # box area [cm2]
     H = 12  # box eight [cm]
     Q = 1000  # discharge [cm3/hr]
-    theta_threshold_box = 0.20  # water content value below which irrigation is switched on in the box [cm3/cm3]
+    theta_threshold_box = 0.18  # water content value below which irrigation is switched on in the box [cm3/cm3]
     theta_threshold = [theta_threshold_box, theta_threshold_box, theta_threshold_box]
-    theta_fc_box = 0.30  # water content at field capacity in the box [cm3/cm3]
+    theta_fc_box = 0.25  # water content at field capacity in the box [cm3/cm3]
     theta_fc = [theta_fc_box, theta_fc_box, theta_fc_box]
 
     # Irrigation time
@@ -346,6 +346,6 @@ while (True):
     print("valve.txt ready.")
 
     # sleep for 24 hours (in seconds)
-    time.sleep(24 * 60)
+    time.sleep(24 * 60 * 60)
 
 
