@@ -394,7 +394,11 @@ while (True):
         # TODO : Set waiting time between first irrigation and post-irrig check (currently 2 hours)
         waiting_time = 60*2
 
+        # Pour avoir  les messages dans nohup.out
+        sys.stdout.flush()
+
         time.sleep(t + 60 * waiting_time)
+
 
 ###############################
 #    POST IRRIGATION CHECK    #
@@ -461,9 +465,12 @@ while (True):
                 print(u"URL=" + (url if url else "") + \
                       u", Message=" + traceback.format_exc())
 
+            # Pour avoir  les messages dans nohup.out
+            sys.stdout.flush()
 
             # sleep for 1 minutes (until next measure is recored)
             time.sleep(60)
+
 
         # Mean WC over 5 minutes
         somme = 0
@@ -552,7 +559,7 @@ while (True):
 
     print('This is it for today, see you next time !')
 
-    # Pour avoir  les messages dans nohup.out...
+    # Pour avoir  les messages dans nohup.out
     sys.stdout.flush()
 
     # Shut down script until the next day
