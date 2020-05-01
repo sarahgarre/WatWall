@@ -363,8 +363,7 @@ while (True):
             somme = 0
             length_result = len(result[4].get('datapoints'))
             for i in range(length_result - (60 * 24) + (j * 60) + 1, length_result - ((23 - j) * 60)):
-                Pluvio = somme + result[4].get('datapoints')[i][
-                    0] / 60  # on divise par 60 car on cumule des intensités de pluie
+                Pluvio = somme + result[4].get('datapoints')[i][0] / 60  # on divise par 60 car on cumule des intensités de pluie
                 Pluie[j] = Pluvio * Area  # exprimées en mm/h
 
         print "* Yesterday it rained", round(sum(Pluie), 3), "litres on our pot"
