@@ -11,7 +11,7 @@ import socket
 import traceback
 import urllib2 as urllib
 
-user = "GW1"
+user = "GW2"
 test = False
 
 if test:
@@ -363,8 +363,7 @@ while (True):
             somme = 0
             length_result = len(result[4].get('datapoints'))
             for i in range(length_result - (60 * 24) + (j * 60) + 1, length_result - ((23 - j) * 60)):
-                Pluvio = somme + result[4].get('datapoints')[i][
-                    0] / 60  # on divise par 60 car on cumule des intensités de pluie
+                Pluvio = somme + result[4].get('datapoints')[i][0] / 60  # on divise par 60 car on cumule des intensités de pluie
                 Pluie[j] = Pluvio * Area  # exprimées en mm/h
 
         print "* Yesterday it rained", round(sum(Pluie), 3), "litres on our pot"
@@ -387,14 +386,18 @@ while (True):
         # erase the current file and open the valve in 30 seconds
         open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
         # append to the file and close the valve 1 minute later
-        open("valve.txt", 'a').write(str(timestamp + t + 30) + ";0\n")
+        open("valve.txt", 'a').write(str(timestamp + int(t) + 30) + ";0\n")
         print("Irrigation has been processed, you're pretty good buddy!")
 
         # sleep for irrigation time PLUS x hours
         # TODO : Set waiting time between first irrigation and post-irrig check (currently 2 hours)
         waiting_time = 60*2
 
+        # Pour avoir  les messages dans nohup.out
+        sys.stdout.flush()
+
         time.sleep(t + 60 * waiting_time)
+
 
 ###############################
 #    POST IRRIGATION CHECK    #
@@ -461,9 +464,12 @@ while (True):
                 print(u"URL=" + (url if url else "") + \
                       u", Message=" + traceback.format_exc())
 
+            # Pour avoir  les messages dans nohup.out
+            sys.stdout.flush()
 
-             # sleep for 1 minutes (until next measure is recored)
+            # sleep for 1 minutes (until next measure is recored)
             time.sleep(60)
+
 
         # Mean WC over 5 minutes
         somme = 0
@@ -526,7 +532,7 @@ while (True):
                 open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
                 # append to the file and close the valve X minute later
                 # TODO : set default irrigation time
-                open("valve.txt", 'a').write(str(timestamp + 30 + t) + ";0\n")
+                open("valve.txt", 'a').write(str(int(timestamp + t) + 30) + ";0\n")
                 print("* Extra watering has been processed, the lettuce has been rescued !")
              else :
                 print('* Water content after first watering is sufficient, no extra watering is needed')
@@ -546,10 +552,15 @@ while (True):
         # append to the file and close the valve X minute later
         # TODO : set default irrigation time (currently set at 30 minutes)
         t = 60*30
-        open("valve.txt", 'a').write(str(timestamp + t +30) + ";0\n")
+        open("valve.txt", 'a').write(str(int(timestamp + t) + 30) + ";0\n")
         print("Don't worry to much, a security watering has been processed")
 
+
     print('This is it for today, see you next time !')
+
+    # Pour avoir  les messages dans nohup.out
+    sys.stdout.flush()
+
     # Shut down script until the next day
     now = get_timestamp()
     time_to_sleep = tomorrow - now

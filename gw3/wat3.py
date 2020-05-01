@@ -13,7 +13,7 @@ import traceback
 import urllib2 as urllib
 
 user = "GW3"
-test = False
+test = True
 # True to run the code locally
 # False to implement the code on the server
 
@@ -114,18 +114,18 @@ while (True):
         gr = {'range': {'from': formatDateGMT(now - (1 * 5 * 60)), 'to': formatDateGMT(now)}, \
               'targets': [{'target': 'HUM7'}, {'target': 'HUM8'}, {'target': 'HUM9'}, {'target': 'SDI11'}]}
         data = json.dumps(gr)
-        print(data)
+        # print(data)                # Display data
         dataFile = urllib.urlopen(url, data, 20)
         result = json.load(dataFile)
         if result:
-            print(result)
+            # print(result)          # Display results
             for target in result:
                 # print target
                 index = target.get('target')
                 for datapoint in target.get('datapoints'):
                     value = datapoint[0]
                     stamp = datapoint[1] / 1000
-                    print(index + ": " + formatDate(stamp) + " = " + str(value))
+                    # print(index + ": " + formatDate(stamp) + " = " + str(value))
 
     except:
         print(u"URL=" + (url if url else "") + \
@@ -315,16 +315,16 @@ while (True):
     A = 1920  # box area [cm2]
     H = 12  # box eight [cm]
     Q = 1000  # discharge [cm3/hr]
-    theta_threshold_box = 0.20  # water content value below which irrigation is switched on in the box [cm3/cm3]
+    theta_threshold_box = 0.18  # water content value below which irrigation is switched on in the box [cm3/cm3]
     theta_threshold = [theta_threshold_box, theta_threshold_box, theta_threshold_box]
-    theta_fc_box = 0.30  # water content at field capacity in the box [cm3/cm3]
+    theta_fc_box = 0.25  # water content at field capacity in the box [cm3/cm3]
     theta_fc = [theta_fc_box, theta_fc_box, theta_fc_box]
 
     # Irrigation time
     time_irrig = []
     for i in range(0, len(theta_fc)):
         vol = (theta_fc[i] - theta_threshold[i]) * A * H  # Irrigation volume [cm3]
-        time_irrig.append(vol / Q * 3600)  # Irrigation time [s]
+        time_irrig.append(int(vol / Q * 3600))  # Irrigation time [s]
         del vol
     print 'time_irrig [s]', time_irrig
 
@@ -346,6 +346,6 @@ while (True):
     print("valve.txt ready.")
 
     # sleep for 24 hours (in seconds)
-    time.sleep(24 * 60)
+    time.sleep(24 * 60 * 60)
 
 
