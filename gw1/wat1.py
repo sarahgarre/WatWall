@@ -200,8 +200,8 @@ while (True):
     # Le volume d'eau est-il suffisant ?
     if V_irrigation < 0.25:  # regarde si le volume à irriguer est assez important, on fait cela à cause de l'incertitude de précision d'arrosage des petits volumes
         print("Le volume d'eau à irriguer est insuffisant, aucune irrigation n'est appliquée ")
+        sys.stdout.flush()  # permet de regarder aux messages
         time.sleep(24 * 60 * 60)  # ce n'est pas le cas donc on irrigue pas et on attend le jour suivant
-        sys.stdout.flush() # permet de regarder aux messages
     else:
         # Planning d'irrigation
         temps_irrigation = round(V_irrigation / 0.000416)  # calcul le temps correspondant au volume précédemment calculé
@@ -227,8 +227,9 @@ while (True):
             print("On peut donc uniquement irriguer sur l'heure actuelle")
         else:
             print("On va donc irriguer sur"+" "+str(n+1)+" "+"heures différentes")
-        time.sleep(4*60*60) # fait une pause dans l'éxécution de 4h pour que l'eau atteigne les capteurs d'humidité
         sys.stdout.flush()
+        time.sleep(4*60*60) # fait une pause dans l'éxécution de 4h pour que l'eau atteigne les capteurs d'humidité
+
 
         # Vérification pour voir si l'irrigation a bien été effectuée
 
@@ -265,8 +266,8 @@ while (True):
         # Vérification de l'augmentation de l'humidité moyenne
         if moyenne_humidite[1] - moyenne_humidite[0] > 0:  # regarde si la différence d'humidité moyenne est positive, preuve qu'elle a bien eu lieu
             print("C'est donc plus élevé que 4 heures plus tôt, l'irrigation a fonctionné :)")
+            sys.stdout.flush()
             time.sleep(20*60*60)  # fait une pause de 20h dans l'éxécution
-            sys.stdout.flush()  # permet de regarder aux messages
         else:
             print("Aïe l'irrigation n'a pas fonctionné, bon bah on recommence:(") # si celle-ci n'a pas augmenté le programme recommence depuis le début des calculs
 
