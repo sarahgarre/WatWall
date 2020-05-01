@@ -69,7 +69,7 @@ if dataFile:
     dataFile.close()
 
 # Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
-#while (True):
+while (True):
 
     # Recueil des dernières valeurs de tension des capteurs d'humidité
     dataFile = None
@@ -156,29 +156,26 @@ if dataFile:
             Rns = (1 - albedo) * Rs
             lat = 50
             sigma = 4.903 * 10 ** (-9) / (24 * 60)
-            J = (date.today() - date(2020, 1,
-                                     1)).days + 1  # représente le nombre de jours passés depuis le 1er janvier 2020 compris
+            J = (date.today() - date(2020, 1,1)).days + 1  # représente le nombre de jours passés depuis le 1er janvier 2020 compris
             dr = 1 + 0.033 * math.cos((6.28 / 365) * J)
             declinaison = 0.409 * math.sin((6.28 / 365) * J - 1.39)
             ws = math.acos(-math.tan(lat) * math.tan(declinaison))
-            Ra = (1/ 3.14) * 0.082 * dr * (
-                    ws * math.sin(lat) * math.sin(declinaison) + math.sin(ws) * math.cos(lat) * math.cos(
-                declinaison))
+            Ra = (1/ 3.14) * 0.082 * dr * (ws * math.sin(lat) * math.sin(declinaison) + math.sin(ws) * math.cos(lat) * math.cos(declinaison))
             Rso = (0.75 + 210 ** (-5) * altitude) * Ra
-            Rnl = sigma * (meteo[2][q] + 273.15) * (0.34 * 0.14 * ea ** 0.5) * (
-                    1.35 * (Rs / Rso) - 0.35)
+            Rnl = sigma * (meteo[2][q] + 273.15) * (0.34 * 0.14 * ea ** 0.5) * (1.35 * (Rs / Rso) - 0.35)
             Rn = Rns - Rnl
             gamma = 0.665 * meteo[4][q] * 10 ** (-3)
             vitesse_du_vent = meteo[1][q]
-            ET0 += (0.408 * delta * Rn + gamma * (0.625 / (273 + meteo[2][q])) * vitesse_du_vent * (es - ea)) / (
-                    delta + gamma * (1 + 0.34 * vitesse_du_vent))  # stocke la somme des ET0 calculés pour chaque minute
+            ET0 += (0.408 * delta * Rn + gamma * (0.625 / (273 + meteo[2][q])) * vitesse_du_vent * (es - ea)) / (delta + gamma * (1 + 0.34 * vitesse_du_vent))  # stocke la somme des ET0 calculés pour chaque minute
 
         if 0<ET0<8:
             ETR = ET0 * Kc  # valeur réelle de l'ETP en considérant le type et le stade de la culture
             V_irrigation = ETR * 10 ** (-2) * 10.5 # volume qui a été perdu par évapotranspiration
             moyenne_humidite[0]= humidite[0]
         else:
-            print("aller chercher l'ET0 dans les données des années précédentes")
+            # marche très bien si on met que des ET0 et J-1 me donne l'indice de l'ET0 d'aujourd'hui
+            float(open("donnees_ET0.csv", 'r').read().split("\n")[J - 1])
+
             ETR = ET0 * Kc
             V_irrigation = ETR * 10 ** (-2) * 10.5
             moyenne_humidite[0] = humidite[0]
@@ -244,7 +241,6 @@ if dataFile:
         time.sleep(20*60*60)  # fait une pause de 20h dans l'éxécution
 
     # si celle-ci n'a pas augmenté le programme recommence depuis le début des calculs
-
 
 
 
