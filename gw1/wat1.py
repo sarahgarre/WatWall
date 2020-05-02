@@ -198,7 +198,7 @@ while (True):
             moyenne_humidite[0] = humidite[0]
 
     # Le volume d'eau est-il suffisant ?
-    if V_irrigation < 0.25:  # regarde si le volume à irriguer est assez important, on fait cela à cause de l'incertitude de précision d'arrosage des petits volumes
+    if V_irrigation < 0.025:  # regarde si le volume à irriguer est assez important, on fait cela à cause de l'incertitude de précision d'arrosage des petits volumes
         print("Le volume d'eau à irriguer est insuffisant, aucune irrigation n'est appliquée ")
         sys.stdout.flush()  # permet de regarder aux messages
         time.sleep(24 * 60 * 60)  # ce n'est pas le cas donc on irrigue pas et on attend le jour suivant
