@@ -69,12 +69,12 @@ def formatDateGMT(epoch):
 delimiters = ' \t\n\r\"\''
 
 
-# TODO : Before running the script on the server stand by time must be set to start irrigation algorithm at 6 AM
+# TODO : Before running the script on the server, stand by time must be set to start irrigation algorithm at 6 AM
 #####################
 #    ENTER TIME    #
 #####################
 hour = 9            #
-minute = 10         #
+minute = 15         #
 #####################
 
 
@@ -145,13 +145,13 @@ while (True):
     # print averageHUM5
     # print averageHUM6
 
-    # calcul de la moyenne des 3 sondes -> averageHUM456
+    # Mean water content value - averageHUM456
     averageHUM456 = (averageHUM4 + averageHUM5 + averageHUM6) / 3
-    # print averageHUM456
 
-    # calibration page 18 http://manuals.decagon.com/Retired%20and%20Discontinued/Manuals/EC-20-EC-10-EC-5-Soil-Moisture-Sensor-Operators-Manual-(discontinued).pdf
-    VWC = 1.3 * averageHUM456 - 0.696
+    #  TODO : set calibration equation
+    VWC = 80 * averageHUM456 - 30
     print 'The water content in the wall totay is', round(VWC * 100, 1), "% isn't it amazing?"
+    print '(The voltage given by the probe is', averageHUM456, ' V)'
 
     ###########################
     #    Data QUALIY CHECK    #
