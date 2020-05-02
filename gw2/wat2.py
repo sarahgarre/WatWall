@@ -71,15 +71,16 @@ delimiters = ' \t\n\r\"\''
 
 # TODO : Before running the script on the server, stand by time must be set to start irrigation algorithm at 6 AM
 #####################
-#    ENTER TIME    #
+#     ENTER TIME    #
 #####################
-hour = 12            #
-minute = 35         #
+hour = 12           #
+minute = 50         #
 #####################
-
 
 # waiting_time is the number of seconds between now and the next 6AM
 waiting_time = (24 - hour + 6)*3600 - (60 * minute)
+
+print 'The script has been loaded sucessfully. Irrigation algorithm will start tomorrow at 6AM, within', waiting_time/3600, ' hours'
 
 # To get messages in nohup.out
 sys.stdout.flush()
