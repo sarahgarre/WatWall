@@ -83,8 +83,8 @@ waiting_time = (24 - hour + 6)*3600 - (60 * minute)
 print 'The script has been loaded sucessfully. Irrigation algorithm will start tomorrow at 6AM, within', waiting_time/3600, ' hours'
 
 # To get messages in nohup.out
-sys.stdout.flush()
-time.sleep(waiting_time)
+# sys.stdout.flush()
+# time.sleep(waiting_time)
 
 
 ################################################################################
@@ -151,8 +151,8 @@ while (True):
 
     #  TODO : set calibration equation
     VWC = 80 * averageHUM456 - 30
-    print 'The water content in the wall totay is', round(VWC * 100, 1), "% isn't it amazing?"
-    print '(The voltage given by the probe is', averageHUM456, ' V)'
+    print 'The water content in the wall totay is', int(VWC), "% isn't it amazing?"
+    print '[Probe signal =', round(averageHUM456,2), ' V]'
 
     ###########################
     #    Data QUALIY CHECK    #
@@ -269,7 +269,7 @@ while (True):
     # Irrigation decision
     print('Irrigation decison :')
     print('====================')
-    print '* Irrigation will start if water content is lower than ', Water_Content_Limit * 100, '%'
+    print '* Irrigation will start if water content is lower than ', int(Water_Content_Limit * 100), '%'
 
     if VWC < Water_Content_Limit:
         Irrig_Needed = True
@@ -379,24 +379,32 @@ while (True):
                 Pluvio = somme + result[4].get('datapoints')[i][0] / 60
                 Pluie[j] = Pluvio * Area
 
-        print "* Yesterday it rained", round(sum(Pluie), 3), "litres on our pot"
-        print "* The ET0 for yesterday was", round(sum(ET0), 3), "mm"
+
+        print "* Radiation for the last 24h was " round(sum(SommeRn), 3) ," MJ/(m2 hour)"
+        print "* Mean temperature for the last 24h was " round(sum(Thr)/24, 3) ," °C"
+        print "* Mean vapor pressure for the last 24h was " round(sum(ea[j]/24), 3) ," kPa"
+        print "* Mean wind speed for the last 24h was " round(sum(u2[j]/24), 3) ," m/s"
+        print "* Mean atmospheric pressure for the last 24h was " round(sum(P[j]/24), 3) ," kPa"
+
+        print "* Yesterday it rained", round(sum(Pluie), 3), " L on our pot"
+        print "* The ET0 for yesterday was", round(sum(ET0), 3), " mm"
 
         # Computation of total water dose to apply - Dosis[L]
         Dosis = sum(ET0) * Kl * Area - sum(Pluie)
         if Dosis < 0:
             Dosis = 0
+            print "* No water has to be applied today, net water flux through the pot for the last 24h is negative "
         else:
             Dosis = Dosis
-        print "* The dosis of water to apply today is ", round(Dosis, 3), "L"
-
+        print "* The dose of water to apply today is ", round(Dosis, 3), "L"
+        print "* This calculation is made for a Kl of ", Kl, ". If plant canopy has evolved on the wall this value might have to be updated..."
         # Discharge Q[L/min]
         Q = 1.5 / 60
 
         # Valve opening time - t[min]
         t = Dosis / Q
 
-        print "* Today we need to open the valve for", round(t, 2), " minutes"
+        print "* Today the valve will be opened for", round(t, 2), " minutes"
 
         timestamp = get_timestamp()
         # erase the current file and open the valve in 30 seconds
@@ -422,8 +430,7 @@ while (True):
 
         print('Post-watering check :')
         print('=====================')
-        print '* Watering has been done', round(waiting_time / 60,
-                                                1), "hours ago, let's check if extra water is needed..."
+        print '* Watering has been done', int(waiting_time / 3600), "hours ago, let's check if extra water is needed..."
 
         # Get WC measures during 5 minutes :
 
@@ -509,8 +516,6 @@ while (True):
         # Mean values of the 3 sensors
         Last_WC_mean = (Last_WC_HUM4_mean + Last_WC_HUM5_mean + Last_WC_HUM6_mean) / 3
 
-        # TODO : quality check of datapoints of the post irrigation procedure
-
         # pre allocations
         SCE_WC4 = 0
         SCE_WC5 = 0
@@ -531,12 +536,13 @@ while (True):
         if std_WC4 < LIM_HUM4 and std_WC5 < LIM_HUM5 and std_WC6 < LIM_HUM6:
             Pot_volume = 12.6  # [L]
 
-            print ("* The probes are still working, that's a good point!")
+            print "* The probes are still working, that's a good point!"
+            print "* Post watering check can be processed"
 
             # Determine if additional watering is needed
             if Last_WC_mean < Water_Content_Limit:
 
-                print('* Water content after first watering is too low, extra watering is needed')
+                print('* Water content after first watering is too low, extra waver is needed')
 
                 # Calculation of additional watering needed
                 Dosis = (Water_Content_Limit * Pot_volume - Last_WC_mean * Pot_volume)
@@ -549,20 +555,20 @@ while (True):
                 # erase the current file and open the valve in 30 seconds
                 open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
                 # append to the file and close the valve X minute later
-                # TODO : set default irrigation time
                 open("valve.txt", 'a').write(str(int(timestamp + t) + 30) + ";0\n")
                 print("* Extra watering has been processed, the lettuce has been rescued !")
             else:
                 print('* Water content after first watering is sufficient, no extra watering is needed')
         else:
-            print("* The probes are not working anymore, maybe we should call Christophe...")
+            print "* The probes are not working anymore, post watering check is not possible today"
+            print "* Maybe we should call Christophe..."
 
     ##################################################################
     #  DEFAULT IRRIGATION if WC probes and weather station are down  #
     ##################################################################
 
     if HUM_QualCheck == False and WS_QualCheck == False:
-        print('* Danm! Both water content probes and weather station are down.')
+        print('* Damn! Both water content probes and weather station are down')
         timestamp = get_timestamp()
         # erase the current file and open the valve in 30 seconds
         open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
@@ -570,7 +576,8 @@ while (True):
         # TODO : set default irrigation time (currently set at 30 minutes)
         t = 60 * 30
         open("valve.txt", 'a').write(str(int(timestamp + t) + 30) + ";0\n")
-        print("Don't worry to much, a security watering has been processed")
+        print("* Don't worry to much, a security watering has been processed")
+        print("* Nevertheless, a check up of the monitoring system is needed")
 
     print('This is it for today, see you next time !')
 
