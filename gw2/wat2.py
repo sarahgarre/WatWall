@@ -17,7 +17,7 @@ import urllib2 as urllib
 ##########################################
 
 user = "GW2"
-test = True
+test = False
 
 if test:
     host = "greenwall.gembloux.uliege.be"
@@ -73,8 +73,8 @@ delimiters = ' \t\n\r\"\''
 #####################
 #     ENTER TIME    #
 #####################
-hour = 12           #
-minute = 50         #
+hour = 20           #
+minute = 15         #
 #####################
 
 # waiting_time is the number of seconds between now and the next 6AM
@@ -118,7 +118,7 @@ Water_Content_Limit = 30
 Kl = 0.7
 
 # Waiting time between first irrigation and post-irrig check
-waiting_time = 60 * 2
+waiting_time = 3600 * 2
 
 # Default irrigation time
 default_irrig = 60 * 30
@@ -186,9 +186,9 @@ while (True):
     # Mean water content value - averageHUM456
     averageHUM456 = (averageHUM4 + averageHUM5 + averageHUM6) / 3
 
-    VWC = m_calib * averageHUM456 - p_calib
-    print '* The water content in the wall totay is', int(VWC), "% isn't it amazing?"
+    VWC = m_calib * averageHUM456 + p_calib
     print '* WC probe signal =', round(averageHUM456, 2), ' V'
+    print '* The water content in the wall totay is', int(VWC), "% isn't it amazing?"
 
     ###########################
     #    Data QUALIY CHECK    #
@@ -451,7 +451,7 @@ while (True):
         print ""
         print 'Post-watering check :'
         print '====================='
-        print '* Watering has been done', int(waiting_time / 3600), "hours ago, let's check if extra water is needed..."
+        print '* Watering has been done', round(waiting_time / 3600,2), "hours ago, let's check if extra water is needed..."
 
         # Get WC measures during 5 minutes :
 
@@ -537,7 +537,7 @@ while (True):
 
         # Mean values of the 3 sensors
         Last_WC_mean = (Last_WC_HUM4_mean + Last_WC_HUM5_mean + Last_WC_HUM6_mean) / 3
-        Last_VWC = m_calib * Last_WC_mean - p_calib
+        Last_VWC = m_calib * Last_WC_mean + p_calib
 
         # pre allocations
         SCE_WC4 = 0
@@ -564,6 +564,7 @@ while (True):
 
             # Determine if additional watering is needed
             if Last_WC_mean < Water_Content_Limit:
+                print '* WC probe signal =', round(Last_WC_mean,2), 'V'
                 print '* Water content is now at', int(Last_VWC), '%'
                 print('* This is too low, extra water is needed')
 
@@ -572,7 +573,7 @@ while (True):
 
                 # Calculation of irrigation time
                 t = Dose / Q
-                print '* An additional', Dose, 'L are needed'
+                print '* An additional', round(Dose,2), 'L is needed'
                 print '* The valve will be opened for', round(t,2), 'more minutes today'
 
                 # make irrigation happen
