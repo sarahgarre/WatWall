@@ -152,7 +152,10 @@ while (True):
     averageHUM456 = (averageHUM4 + averageHUM5 + averageHUM6) / 3
 
     #  TODO : set calibration equation
-    VWC = 80 * averageHUM456 - 30
+
+    m_calib = 80
+    p_calib = 30
+    VWC = m_calib * averageHUM456 - p_calib
     print '* The water content in the wall totay is', int(VWC), "% isn't it amazing?"
     print '* WC probe signal =', round(averageHUM456, 2), ' V'
 
@@ -534,6 +537,7 @@ while (True):
 
         # Mean values of the 3 sensors
         Last_WC_mean = (Last_WC_HUM4_mean + Last_WC_HUM5_mean + Last_WC_HUM6_mean) / 3
+        Last_VWC = m_calib * Last_WC_mean - p_calib
 
         # pre allocations
         SCE_WC4 = 0
@@ -560,16 +564,16 @@ while (True):
 
             # Determine if additional watering is needed
             if Last_WC_mean < Water_Content_Limit:
-
-                print('* Water content after first watering is too low, extra waver is needed')
+                print '* Water content is now at', int(Last_VWC), '%'
+                print('* This is too low, extra water is needed')
 
                 # Calculation of additional watering needed
-                Dose = (Water_Content_Limit * Pot_volume - Last_WC_mean * Pot_volume)
+                Dose = (Water_Content_Limit * Pot_volume - Last_VWC * Pot_volume)/100
 
                 # Calculation of irrigation time
                 t = Dose / Q
-                print '* An additional' Dose, 'L are needed'
-                print '* The valve will be opened for' round(t,2), 'more minutes today'
+                print '* An additional', Dose, 'L are needed'
+                print '* The valve will be opened for', round(t,2), 'more minutes today'
 
                 # make irrigation happen
                 timestamp = get_timestamp()
@@ -579,7 +583,8 @@ while (True):
                 open("valve.txt", 'a').write(str(int(timestamp + t) + 30) + ";0\n")
                 print("* Extra watering has been processed, the lettuce has been rescued !")
             else:
-                print('* Water content after first watering is sufficient, no extra watering is needed')
+                print '* Water content is now at', int(Last_WC_mean), '%'
+                print('* This is sufficient, no extra watering is needed')
         else:
             print "* The probes are not working anymore, post watering check is not possible today"
             print "* Maybe we should call Christophe..."
