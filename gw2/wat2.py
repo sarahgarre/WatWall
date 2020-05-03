@@ -87,6 +87,41 @@ print 'The script has been loaded successfully. Irrigation algorithm will start 
 #if not test :
 #   time.sleep(waiting_time)
 
+##########################
+#        Settings        #
+##########################
+
+# Discharge Q[L/min]
+Q = 1.5 / 60
+
+# Calibration parameters
+m_calib = 96
+p_calib = - 30
+
+# Number of successive values to consider
+N = 5
+
+# Admissible std for environemental param
+
+LIM_HUM4 = 0.1131
+LIM_HUM5 = 0.1340
+LIM_HUM6 = 0.1135
+LIM_Rn = 322.5866
+LIM_Thr = 2.8370
+LIM_u2 = 1.231
+LIM_P = 0.0678
+
+# Minimum water content admissible
+Water_Content_Limit = 30
+
+# Crop coefficient
+Kl = 0.7
+
+# Waiting time between first irrigation and post-irrig check
+waiting_time = 60 * 2
+
+# Default irrigation time
+default_irrig = 60 * 30
 
 ################################################################################
 #                     *** IRRIGATION DECISION ALGORITHM ***                    #
@@ -151,10 +186,6 @@ while (True):
     # Mean water content value - averageHUM456
     averageHUM456 = (averageHUM4 + averageHUM5 + averageHUM6) / 3
 
-    #  TODO : set calibration equation
-
-    m_calib = 96
-    p_calib = - 30
     VWC = m_calib * averageHUM456 - p_calib
     print '* The water content in the wall totay is', int(VWC), "% isn't it amazing?"
     print '* WC probe signal =', round(averageHUM456, 2), ' V'
@@ -162,21 +193,6 @@ while (True):
     ###########################
     #    Data QUALIY CHECK    #
     ###########################
-
-    # 1/ Set number of successive values to consider
-    # TODO : set number of successive data points to consider (currently 5)
-    N = 5
-
-    # 2/ Set admissible std (INSERT TRUE VALUE)
-    # TODO : set admissible std for each sensor
-
-    LIM_HUM4 = 0.1131
-    LIM_HUM5 = 0.1340
-    LIM_HUM6 = 0.1135
-    LIM_Rn = 322.5866
-    LIM_Thr = 2.8370
-    LIM_u2 = 1.231
-    LIM_P = 0.0678
 
     # 3/ computation of std for water content probes
 
@@ -279,11 +295,6 @@ while (True):
         print('* Weather station is NOT working, damn!')
 
     # 3/ Check whether irrigation is needed
-
-    # Set minimum water content admissible
-    # TODO : set minimum water content bellow which irrig is triggered (currently set at 30 percent)
-    Water_Content_Limit = 30
-
     print '* Irrigation will start if water content is lower than', int(Water_Content_Limit), '%'
 
     if VWC < Water_Content_Limit:
@@ -376,10 +387,6 @@ while (True):
             ET0[j] = (0.408 * delta[j] * SommeRn[j] + gamma[j] * (37 / (Thr[j] + 273)) * u2[j] * (eThr[j] - ea[j])) / (
                     delta[j] + gamma[j] * (1 + 0.34 * u2[j]))
 
-            # J - Crop coefficient setting
-            # TODO : set actual crop coefficient (currently at 0.7)
-            Kl = 0.7
-
             # K - Dimensions du pot -> Area [m2]
             Area = 0.75 * 0.14
 
@@ -418,9 +425,6 @@ while (True):
             print "* The dose of water to apply today is ", round(Dose, 3), "L"
             print "* This calculation is made for a Kl of ", Kl, ". If canopy cover has evolved on the module this value might have to be updated..."
 
-            # Discharge Q[L/min]
-            Q = 1.5 / 60
-
             # Valve opening time - t[min]
             t = Dose / Q
 
@@ -433,11 +437,7 @@ while (True):
             open("valve.txt", 'a').write(str(timestamp + int(t) + 30) + ";0\n")
             print("* Irrigation has been processed, you're pretty good buddy!")
 
-            # sleep for irrigation time PLUS x hours
-            # TODO : Set waiting time between first irrigation and post-irrig check (currently 2 hours)
-            waiting_time = 60 * 2
-
-            # To get messages in nohup.out
+            # sleep for 'irrigation time PLUS x hours'
             sys.stdout.flush()
             if not test :
                 time.sleep(t + 60 * waiting_time)
@@ -596,12 +596,8 @@ while (True):
     if HUM_QualCheck == False and WS_QualCheck == False:
         print('* Damn! Both water content probes and weather station are down')
         timestamp = get_timestamp()
-        # erase the current file and open the valve in 30 seconds
         open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
-        # append to the file and close the valve X minute later
-        # TODO : set default irrigation time (currently set at 30 minutes)
-        t = 60 * 30
-        open("valve.txt", 'a').write(str(int(timestamp + t) + 30) + ";0\n")
+        open("valve.txt", 'a').write(str(int(timestamp + default_irrig) + 30) + ";0\n")
         print("* Don't worry to much, a security watering has been processed")
         print("* Nevertheless, a check up of the monitoring system is needed")
 
