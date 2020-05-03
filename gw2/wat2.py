@@ -17,7 +17,7 @@ import urllib2 as urllib
 ##########################################
 
 user = "GW2"
-test = False
+test = True
 
 if test:
     host = "greenwall.gembloux.uliege.be"
@@ -198,27 +198,40 @@ while (True):
     # 4/ computation of std for weather station data
 
     # pre allocations
-    length_result = len(result[0].get('datapoints'))
     sum_Rn = 0
     sum_Thr = 0
     sum_u2 = 0
     sum_P = 0
 
     # Compute sum & mean
+    length_result = len(result[3].get('datapoints'))
     for i in range(length_result - N, length_result):  # for the last N measures of the day
         sum_Rn = sum_Rn + result[3].get('datapoints')[i][0]  # sum of data points
-        sum_Thr = sum_Thr + result[6].get('datapoints')[i][0]
-        sum_u2 = sum_u2 + result[5].get('datapoints')[i][0]
     mean_Rn = sum_Rn / N  # mean of datapoints
+
+    # Compute sum & mean for pressure
+    length_result = len(result[6].get('datapoints'))
+    for i in range(length_result - N, length_result):  # for the last N measures of the day
+        sum_Thr = sum_Thr + result[6].get('datapoints')[i][0]
+    # mean of datapoints
     mean_Thr = sum_Thr / N
+
+    # Compute sum & mean for pressure
+    length_result = len(result[5].get('datapoints'))
+    for i in range(length_result - N, length_result):  # for the last N measures of the day
+        sum_u2 = sum_u2 + result[5].get('datapoints')[i][0]
+    # mean of datapoints
     mean_u2 = sum_u2 / N
 
-    # Compute sum & mean for rain (separately because different number of datapoints)
+    # Compute sum & mean for pressure
     length_result = len(result[8].get('datapoints'))
     for i in range(length_result - N, length_result):  # for the last N measures of the day
         sum_P = sum_P + result[8].get('datapoints')[i][0]  # sum of data points
     # mean of datapoints
     mean_P = sum_P / N
+
+
+
     # pre allocation
     SCE_Rn = 0
     SCE_Thr = 0
@@ -384,7 +397,7 @@ while (True):
         print "* Mean wind speed for was :        ",round(sum(u2)/24, 3),      " m/s"
         print "* Mean atmospheric pressure was :  ",round(sum(P)/24, 3),       " kPa"
 
-        print "* Yesterday it rained :            ",round(sum(Pluie)/Area, 3), " mm"
+        print "* Yesterday it rained :            ",round(sum(Pluie)/Area,5), " mm"
         print "* The ET0 for yesterday was :      ",round(sum(ET0), 3),        " mm"
 
         if Irrig_Needed:
@@ -555,6 +568,8 @@ while (True):
 
                 # Calculation of irrigation time
                 t = Dose / Q
+                print '* An additional' Dose, 'L are needed'
+                print '* The valve will be opened for' round(t,2), 'more minutes today'
 
                 # make irrigation happen
                 timestamp = get_timestamp()
