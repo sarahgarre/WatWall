@@ -66,8 +66,8 @@ def formatDateGMT(epoch):
     dt = datetime.fromtimestamp(epoch - (2 * 60 * 60))  # We are in summer and in Belgium !
     return dt.isoformat()
 
-delimiters = ' \t\n\r\"\''
 
+delimiters = ' \t\n\r\"\''
 
 # TODO : Before running the script on the server, stand by time must be set to start irrigation algorithm at 6 AM
 #####################
@@ -78,13 +78,14 @@ minute = 50         #
 #####################
 
 # waiting_time is the number of seconds between now and the next 6AM
-waiting_time = (24 - hour + 6)*3600 - (60 * minute)
+waiting_time = (24 - hour + 6) * 3600 - (60 * minute)
 
-print 'The script has been loaded sucessfully. Irrigation algorithm will start tomorrow at 6AM, within', waiting_time/3600, ' hours'
+print 'The script has been loaded successfully. Irrigation algorithm will start tomorrow at 6 AM, within', waiting_time / 3600, 'hours'
 
 # To get messages in nohup.out
 # sys.stdout.flush()
-# time.sleep(waiting_time)
+#if not test :
+#   time.sleep(waiting_time)
 
 
 ################################################################################
@@ -94,7 +95,8 @@ print 'The script has been loaded sucessfully. Irrigation algorithm will start t
 while (True):
 
     print('=========================================================================')
-    print('A new day in the wonderful world of irrigation starts...')
+    print ""
+    print('* A new day in the wonderful world of irrigation starts...')
 
     # Getting tomorrow starting time  (for script shut down period)
     tomorrow = get_timestamp() + 24 * 60 * 60
@@ -103,7 +105,7 @@ while (True):
     #    Data collection    #
     #########################
 
-    print('Data is being collected')
+    print('* Data is being collected')
     dataFile = None
     try:  # urlopen not usable with "with"
         url = "http://" + host + "/api/grafana/query"
@@ -151,8 +153,8 @@ while (True):
 
     #  TODO : set calibration equation
     VWC = 80 * averageHUM456 - 30
-    print 'The water content in the wall totay is', int(VWC), "% isn't it amazing?"
-    print '[Probe signal =', round(averageHUM456,2), ' V]'
+    print '* The water content in the wall totay is', int(VWC), "% isn't it amazing?"
+    print '* WC probe signal =', round(averageHUM456, 2), ' V'
 
     ###########################
     #    Data QUALIY CHECK    #
@@ -240,9 +242,9 @@ while (True):
     #############################
     #    IRRIGATION DECISION    #
     #############################
-
-    print('Checking sensors :')
-    print('==================')
+    print ""
+    print 'Checking sensors :'
+    print '=================='
 
     # 1/  Quality check for all 3 WC sensor
     if std_HUM4 < LIM_HUM4 and std_HUM5 < LIM_HUM5 and std_HUM6 < LIM_HUM6:
@@ -258,18 +260,15 @@ while (True):
         print('* Weather station is working, good job Christophe!')
     else:
         WS_QualCheck = False
-        print('* Weather station is NOT working, ho sh***t!')
+        print('* Weather station is NOT working, damn!')
 
     # 3/ Check whether irrigation is needed
 
     # Set minimum water content admissible
     # TODO : set minimum water content bellow which irrig is triggered (currently set at 30 percent)
-    Water_Content_Limit = 0.3
+    Water_Content_Limit = 30
 
-    # Irrigation decision
-    print('Irrigation decison :')
-    print('====================')
-    print '* Irrigation will start if water content is lower than ', int(Water_Content_Limit * 100), '%'
+    print '* Irrigation will start if water content is lower than', int(Water_Content_Limit), '%'
 
     if VWC < Water_Content_Limit:
         Irrig_Needed = True
@@ -285,10 +284,7 @@ while (True):
     # 1/ ET0 calculation for the last 24 h :
 
     # if quality check ok
-    if HUM_QualCheck == True and Irrig_Needed == True and WS_QualCheck == True:
-
-        print('Irrigation based on weather station data starts :')
-        print('=================================================')
+    if HUM_QualCheck == True and WS_QualCheck == True:
 
         # pre allocations
         SommeRn = range(23)
@@ -379,48 +375,56 @@ while (True):
                 Pluvio = somme + result[4].get('datapoints')[i][0] / 60
                 Pluie[j] = Pluvio * Area
 
+        print ""
+        print "Recorded data for the last 24h :"
+        print "================================"
+        print "* Total radiation was :            ", round(sum(SommeRn), 3),   " MJ/(m2 hour)"
+        print "* Mean temperature was :           ",round(sum(Thr)/24, 3),     " degree C"
+        print "* Mean vapor pressure was :        ",round(sum(ea)/24, 3),      " kPa"
+        print "* Mean wind speed for was :        ",round(sum(u2)/24, 3),      " m/s"
+        print "* Mean atmospheric pressure was :  ",round(sum(P)/24, 3),       " kPa"
 
-        print "* Radiation for the last 24h was " round(sum(SommeRn), 3) ," MJ/(m2 hour)"
-        print "* Mean temperature for the last 24h was " round(sum(Thr)/24, 3) ," °C"
-        print "* Mean vapor pressure for the last 24h was " round(sum(ea[j]/24), 3) ," kPa"
-        print "* Mean wind speed for the last 24h was " round(sum(u2[j]/24), 3) ," m/s"
-        print "* Mean atmospheric pressure for the last 24h was " round(sum(P[j]/24), 3) ," kPa"
+        print "* Yesterday it rained :            ",round(sum(Pluie)/Area, 3), " mm"
+        print "* The ET0 for yesterday was :      ",round(sum(ET0), 3),        " mm"
 
-        print "* Yesterday it rained", round(sum(Pluie), 3), " L on our pot"
-        print "* The ET0 for yesterday was", round(sum(ET0), 3), " mm"
+        if Irrig_Needed:
 
-        # Computation of total water dose to apply - Dosis[L]
-        Dosis = sum(ET0) * Kl * Area - sum(Pluie)
-        if Dosis < 0:
-            Dosis = 0
-            print "* No water has to be applied today, net water flux through the pot for the last 24h is negative "
-        else:
-            Dosis = Dosis
-        print "* The dose of water to apply today is ", round(Dosis, 3), "L"
-        print "* This calculation is made for a Kl of ", Kl, ". If plant canopy has evolved on the wall this value might have to be updated..."
-        # Discharge Q[L/min]
-        Q = 1.5 / 60
+            print ""
+            print('Irrigation decision :')
+            print('=====================')
 
-        # Valve opening time - t[min]
-        t = Dosis / Q
+            # Computation of total water dose to apply - Dosis[L]
+            Dose = sum(ET0) * Kl * Area - sum(Pluie)
+            if Dose < 0:
+                Dose = 0
+                print "* No water has to be applied today, net water flux through the pot for the last 24h is negative "
 
-        print "* Today the valve will be opened for", round(t, 2), " minutes"
+            print "* The dose of water to apply today is ", round(Dose, 3), "L"
+            print "* This calculation is made for a Kl of ", Kl, ". If canopy cover has evolved on the module this value might have to be updated..."
 
-        timestamp = get_timestamp()
-        # erase the current file and open the valve in 30 seconds
-        open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
-        # append to the file and close the valve 1 minute later
-        open("valve.txt", 'a').write(str(timestamp + int(t) + 30) + ";0\n")
-        print("Irrigation has been processed, you're pretty good buddy!")
+            # Discharge Q[L/min]
+            Q = 1.5 / 60
 
-        # sleep for irrigation time PLUS x hours
-        # TODO : Set waiting time between first irrigation and post-irrig check (currently 2 hours)
-        waiting_time = 60 * 2
+            # Valve opening time - t[min]
+            t = Dose / Q
 
-        # To get messages in nohup.out
-        sys.stdout.flush()
+            print "* The valve will be opened for", round(t, 2), " minutes"
 
-        time.sleep(t + 60 * waiting_time)
+            timestamp = get_timestamp()
+            # erase the current file and open the valve in 30 seconds
+            open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
+            # append to the file and close the valve 1 minute later
+            open("valve.txt", 'a').write(str(timestamp + int(t) + 30) + ";0\n")
+            print("* Irrigation has been processed, you're pretty good buddy!")
+
+            # sleep for irrigation time PLUS x hours
+            # TODO : Set waiting time between first irrigation and post-irrig check (currently 2 hours)
+            waiting_time = 60 * 2
+
+            # To get messages in nohup.out
+            sys.stdout.flush()
+            if not test :
+                time.sleep(t + 60 * waiting_time)
 
     ###############################
     #    POST IRRIGATION CHECK    #
@@ -428,8 +432,9 @@ while (True):
 
     if HUM_QualCheck == True:
 
-        print('Post-watering check :')
-        print('=====================')
+        print ""
+        print 'Post-watering check :'
+        print '====================='
         print '* Watering has been done', int(waiting_time / 3600), "hours ago, let's check if extra water is needed..."
 
         # Get WC measures during 5 minutes :
@@ -491,7 +496,8 @@ while (True):
             sys.stdout.flush()
 
             # sleep for 1 minutes (until next measure is recored)
-            time.sleep(60)
+            if not test :
+                time.sleep(60)
 
         # Mean WC over 5 minutes
         somme = 0
@@ -523,11 +529,11 @@ while (True):
         for i in range(0, N):
             # Sum of deviations calculation
             WC = Last_WC_HUM4[i]
-            SCE_WC4 = SCE_WC4 + pow(float(WC[1:len(WC) - 1]) - Last_WC_HUM4_mean,2)
+            SCE_WC4 = SCE_WC4 + pow(float(WC[1:len(WC) - 1]) - Last_WC_HUM4_mean, 2)
             WC = Last_WC_HUM5[i]
-            SCE_WC5 = SCE_WC5 + pow(float(WC[1:len(WC) - 1]) - Last_WC_HUM5_mean,2)
+            SCE_WC5 = SCE_WC5 + pow(float(WC[1:len(WC) - 1]) - Last_WC_HUM5_mean, 2)
             WC = Last_WC_HUM6[i]
-            SCE_WC6 = SCE_WC6 + pow(float(WC[1:len(WC) - 1]) - Last_WC_HUM6_mean,2)
+            SCE_WC6 = SCE_WC6 + pow(float(WC[1:len(WC) - 1]) - Last_WC_HUM6_mean, 2)
         # Std computation
         std_WC4 = math.sqrt((1 / N) * SCE_WC4)
         std_WC5 = math.sqrt((1 / N) * SCE_WC5)
@@ -545,10 +551,10 @@ while (True):
                 print('* Water content after first watering is too low, extra waver is needed')
 
                 # Calculation of additional watering needed
-                Dosis = (Water_Content_Limit * Pot_volume - Last_WC_mean * Pot_volume)
+                Dose = (Water_Content_Limit * Pot_volume - Last_WC_mean * Pot_volume)
 
                 # Calculation of irrigation time
-                t = Dosis / Q
+                t = Dose / Q
 
                 # make irrigation happen
                 timestamp = get_timestamp()
@@ -587,4 +593,5 @@ while (True):
     # Shut down script until the next day
     now = get_timestamp()
     time_to_sleep = tomorrow - now
-    time.sleep(time_to_sleep)
+    if not test :
+        time.sleep(time_to_sleep)
