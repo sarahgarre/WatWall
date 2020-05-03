@@ -112,7 +112,7 @@ while (True):
     # Combien de valeurs reste-t-il ?
     if t!=3:
         moyenne_humidite=[sum(humidite[0])/len(humidite[0])]
-        print("On effectue le plan A et la teneur en eau moyenne est de"+" "+str(moyenne_humidite[0]))
+        print("On effectue donc le plan A et la teneur en eau moyenne est de"+" "+str(moyenne_humidite[0]))
 
         # Où se situe l'humidité moyenne ?
         if moyenne_humidite[0]>0.285: # regarde si elle est supérieure à la CC
@@ -192,10 +192,11 @@ while (True):
         else:
             print("On effectue donc le plan C")
             ET0=float(open("../WatWall/gw1/ET0.csv", 'r').read().split("\n")[J - 1]) # trouve la valeur moyenne d'ET0 pour aujourd'hui dans notre fichier
-            print("On prend donc"+" "+str(ET0)+"comme valeur d'ET0 à la place")
+            print("On prend donc"+" "+str(ET0)+" comme valeur d'ET0 à la place")
             ETR = ET0 * Kc
             V_irrigation = ETR * 10 ** (-2) * 10.5
             moyenne_humidite[0] = humidite[0]
+            print("La teneur en eau moyenne est de"+" "+str(moyenne_humidite[0]))
 
     # Le volume d'eau est-il suffisant ?
     if V_irrigation < 0.025:  # regarde si le volume à irriguer est assez important, on fait cela à cause de l'incertitude de précision d'arrosage des petits volumes
@@ -226,7 +227,7 @@ while (True):
         if n==0:
             print("On peut donc uniquement irriguer sur l'heure actuelle")
         else:
-            print("On va donc irriguer sur"+" "+str(n+1)+" "+"heures différentes")
+            print("On va donc irriguer sur"+" "+str(n+1)+" heures différentes")
         sys.stdout.flush()
         time.sleep(4*60*60) # fait une pause dans l'éxécution de 4h pour que l'eau atteigne les capteurs d'humidité
 
