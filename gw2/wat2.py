@@ -153,8 +153,8 @@ while (True):
 
     #  TODO : set calibration equation
 
-    m_calib = 80
-    p_calib = 30
+    m_calib = 96
+    p_calib = - 30
     VWC = m_calib * averageHUM456 - p_calib
     print '* The water content in the wall totay is', int(VWC), "% isn't it amazing?"
     print '* WC probe signal =', round(averageHUM456, 2), ' V'
