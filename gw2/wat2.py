@@ -17,7 +17,7 @@ import urllib2 as urllib
 ##########################################
 
 user = "GW2"
-test = False
+test = True
 
 if test:
     host = "greenwall.gembloux.uliege.be"
@@ -83,7 +83,7 @@ waiting_time = (24 - hour + 6) * 3600 - (60 * minute)
 print 'The script has been loaded successfully. Irrigation algorithm will start tomorrow at 6 AM, within', waiting_time / 3600, 'hours'
 
 # To get messages in nohup.out
- sys.stdout.flush()
+sys.stdout.flush()
 if not test :
    time.sleep(waiting_time)
 
@@ -101,15 +101,18 @@ p_calib = - 30
 # Number of successive values to consider
 N = 5
 
-# Admissible std for environemental param
+# Admissible std for environmental param
 
-LIM_HUM4 = 0.1131
-LIM_HUM5 = 0.1340
-LIM_HUM6 = 0.1135
 LIM_Rn = 322.5866
 LIM_Thr = 2.8370
 LIM_u2 = 1.231
 LIM_P = 0.0678
+
+# Admissible std for environmental param
+LIM_HUM4 = 0.1131
+LIM_HUM5 = 0.1340
+LIM_HUM6 = 0.1135
+LIM_HUM456 = 1
 
 # Minimum water content admissible
 Water_Content_Limit = 30
@@ -185,6 +188,9 @@ while (True):
 
     # Mean water content value - averageHUM456
     averageHUM456 = (averageHUM4 + averageHUM5 + averageHUM6) / 3
+
+    # std deviation between sensors
+    std_HUM456 = math.sqrt(pow((averageHUM4 - averageHUM456), 2) + pow((averageHUM5 - averageHUM456), 2) + pow((averageHUM6 - averageHUM456), 2))
 
     VWC = m_calib * averageHUM456 + p_calib
     print '* WC probe signal =', round(averageHUM456, 2), ' V'
@@ -278,8 +284,18 @@ while (True):
     print 'Checking sensors :'
     print '=================='
 
+    print '* std of HUM4 over', int(N), 'minutes is :     ', round(std_HUM4, 3)
+    print '* std of HUM5 over', int(N), 'minutes is :     ', round(std_HUM5, 3)
+    print '* std of HUM6 over', int(N), 'minutes is :     ', round(std_HUM6, 3)
+    print '* std of HUM over space is :          ', round(std_HUM456, 3)
+    print' std of WS over', int(N), 'minutes'
+    print '* radiation measurement is :     ', round(std_Rn, 3)
+    print '* temperature measurement is :   ', round(std_Thr, 3)
+    print '* wind speed measurement is :    ', round(std_u2, 3)
+    print '* atm. press. measurement is :   ', round(std_P, 3)
+
     # 1/  Quality check for all 3 WC sensor
-    if std_HUM4 < LIM_HUM4 and std_HUM5 < LIM_HUM5 and std_HUM6 < LIM_HUM6:
+    if std_HUM4 < LIM_HUM4 and std_HUM5 < LIM_HUM5 and std_HUM6 < LIM_HUM6 and std_HUM456 < LIM_HUM456:
         HUM_QualCheck = True
         print('* Water content probe is working, awesome!')
     else:
@@ -453,7 +469,8 @@ while (True):
         print '====================='
         print '* Watering has been done', round(waiting_time / 3600,2), "hours ago, let's check if extra water is needed..."
 
-        # Get WC measures during 5 minutes :
+        # Get WC measures during 5 minutes
+        ##################################
 
         dataFile = None
 
@@ -539,6 +556,9 @@ while (True):
         Last_WC_mean = (Last_WC_HUM4_mean + Last_WC_HUM5_mean + Last_WC_HUM6_mean) / 3
         Last_VWC = m_calib * Last_WC_mean + p_calib
 
+
+        # QUALITY CHECK post irrig check
+        ################################
         # pre allocations
         SCE_WC4 = 0
         SCE_WC5 = 0
