@@ -73,8 +73,8 @@ delimiters = ' \t\n\r\"\''
 #####################
 #     ENTER TIME    #
 #####################
-hour = 20           #
-minute = 20         #
+hour = 15           #
+minute = 13         #
 #####################
 
 # waiting_time is the number of seconds between now and the next 6AM
