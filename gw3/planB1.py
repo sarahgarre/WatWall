@@ -201,16 +201,16 @@ while (True):
     length_result = len(result[index_res].get('datapoints'))
     RH_sum = 0                                              # Sum initialization
     for j in range(0, length_result):
-        RH_sum += result[index_res].get('datapoints')[j][0] # Calculate sum [%]
-    RH = RH_sum / length_result                             # Calculate mean [%]
+        RH_sum += result[index_res].get('datapoints')[j][0]     # Calculate sum [%]
+    RH = RH_sum / length_result                                 # Calculate mean [%]
     print'RH =',RH,'%'
 
     # rain (SDI1) : [mm/hr] -> [mm]
-    index_res = index_rain                              # Index in the result dict
+    index_res = index_rain                                      # Index in the result dict
     length_result = len(result[index_res].get('datapoints'))
-    P = 0                                               # Sum initialization
+    P = 0                                                       # Sum initialization
     for j in range(0, length_result):
-        P += (result[index_res].get('datapoints')[j][0])/60  # Calculate sum [mm]
+        P += (result[index_res].get('datapoints')[j][0])/60     # Calculate sum [mm]
     print'P =',P,'mm'
 
     # ___________________________________________________________________________
@@ -257,41 +257,6 @@ while (True):
     # append to the file and close the valve time_irrig later
     open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig) + ";0\n")
     print("valve.txt ready.")
-
-    # d. Draw graphs
-
-    # (*) Create time and data lists
-    # Initialization
-    date_list = []
-    Rn_list = []
-    rain_list = []
-    windspeed_list = []
-    Tair_list = []
-    ea_list = []
-    patm_list = []
-    RH_list = []
-    # Build lists
-    length_result = len(result[0].get('datapoints'))
-    for i in range(0, length_result):
-        # Date
-        date_epoch = result[0].get('datapoints')[i][1]/1000
-        date_datetime = time.strftime("%d %b %Y %H:%M:%S", time.localtime(date_epoch))
-        date_list.append(date_datetime)
-        # Solar radiation
-        Rn_list.append(result[index_Rn].get('datapoints')[i][0])
-        # Rainfall
-        rain_list.append(result[index_rain].get('datapoints')[i][0])
-        # Wind speed
-        windspeed_list.append(result[index_windspeed].get('datapoints')[i][0])
-        # Tair
-        Tair_list.append(result[index_Tair].get('datapoints')[i][0])
-        # Vaopor pressure
-        ea_list.append(result[index_ea].get('datapoints')[i][0])
-        # Atmospheric pressure
-        patm_list.append(result[index_patm].get('datapoints')[i][0])
-        # Relative humidity
-        RH_list.append(result[index_RH].get('datapoints')[i][0])
-    print 'Date :', date_list
 
 
 

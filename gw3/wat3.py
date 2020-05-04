@@ -13,7 +13,7 @@ import traceback
 import urllib2 as urllib
 
 user = "GW3"
-test = True
+test = False
 # True to run the code locally
 # False to implement the code on the server
 
@@ -315,35 +315,46 @@ while (True):
     A = 1920  # box area [cm2]
     H = 12  # box eight [cm]
     Q = 1000  # discharge [cm3/hr]
-    theta_threshold_box = 0.18  # water content value below which irrigation is switched on in the box [cm3/cm3]
-    theta_threshold = [theta_threshold_box, theta_threshold_box, theta_threshold_box]
-    theta_fc_box = 0.25  # water content at field capacity in the box [cm3/cm3]
-    theta_fc = [theta_fc_box, theta_fc_box, theta_fc_box]
 
-    # Irrigation time
+    theta_fc7 = 0.27  # water content at field capacity in the medium of the sensor HUM7 [cm3/cm3]
+    theta_fc8 = 0.22  # water content at field capacity in the medium of the sensor HUM8 [cm3/cm3]
+    theta_fc9 = 0.26  # water content at field capacity in the medium of the sensor HUM9 [cm3/cm3]
+
+    # Water content at field capacity
+    theta_fc = [theta_fc7, theta_fc8, theta_fc9]  # water content at field capacity in the box [cm3/cm3]
+
+    # Irrigation time => Water needs in the three layers
     time_irrig = []
     for i in range(0, len(theta_fc)):
-        vol = (theta_fc[i] - theta_threshold[i]) * A * H  # Irrigation volume [cm3]
-        time_irrig.append(int(vol / Q * 3600))  # Irrigation time [s]
+        vol = (theta_fc[i] - theta_mean[i]) * A * H  # Irrigation volume [cm3]
+        if vol < 0:
+            time_irrig.append(0)
+        else:
+            time_irrig.append(int(vol / Q * 3600))  # Irrigation time [s]
         del vol
-    print 'time_irrig [s]', time_irrig
 
-    # Find the minimal water content
-    index_min = theta_mean.index(min(theta_mean))
-    print 'theta_mean min [cm3/cm3]:', theta_mean[index_min]
+    print 'time_irrig [s]:', time_irrig
 
-    # Choose to irrigate or not
-    if theta_mean[index_min] < theta_threshold[index_min]:
-        timestamp = get_timestamp()
-        # erase the current file and open the valve in 30 seconds
-        open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
-        # append to the file and close the valve time_irrig later
-        open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig[index_min]) + ";0\n")
-        print 'Irrigation is needed'
-        print 'Open the valve for', time_irrig[index_min] / 3600, 'hour'
+    # Find the maximal irrigation time
+    index_max = time_irrig.index(max(time_irrig))
+    print 'time_irrig max [s]:', time_irrig[index_max]
+
+    # Irrigation
+    timestamp = get_timestamp()
+    # erase the current file and open the valve in 30 seconds
+    open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
+    # append to the file and close the valve time_irrig later
+    open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig[index_max]) + ";0\n")
+    print 'Open the valve for', time_irrig[index_max], 'seconds'
 
     # Processed finished
     print("valve.txt ready.")
+
+    # Update nohup.out file
+    sys.stdout.flush()
+
+    # Update nohup.out file
+    sys.stdout.flush()
 
     # sleep for 24 hours (in seconds)
     time.sleep(24 * 60 * 60)
