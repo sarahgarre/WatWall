@@ -210,7 +210,7 @@ while (True):
         n = 0
         if temps_irrigation <= 1200:
             open("valve.txt", 'w').write(str(timestamp) + ";1\n")  # crée un nouveau planning et demande d'ouvrir la vanne à l'instant même
-            open("valve.txt", 'a').write(str(int(timestamp + temps_irrigation)) + ";0\n")  # demande la fermeture de la vanne après le temps d'irrigation calculé plus haut
+            open("valve.txt", 'a').write(str(int(timestamp + 1200)) + ";0\n")  # demande la fermeture de la vanne après le temps d'irrigation calculé plus haut
         else:
             open("valve.txt", 'w').write(str(timestamp) + ";1\n")
             open("valve.txt", 'a').write(str(int(timestamp + 1200)) + ";0\n")
