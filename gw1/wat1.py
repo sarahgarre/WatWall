@@ -187,7 +187,7 @@ while (True):
             ETR = ET0 * Kc  # valeur réelle de l'ETP en considérant le type et le stade de la culture
             V_irrigation = ETR * 10 ** (-2) * 10.5 # volume qui a été perdu par évapotranspiration
             moyenne_humidite[0]= humidite[0]
-            print("On va donc irriguer"+" "+str(V_irrigation)+" "+"litres pour compenser l'ETP des 24 dernières heures")
+            print("On va donc irriguer"+" "+str(V_irrigation)+" litres pour compenser l'ETP des 24 dernières heures")
             print("La teneur en eau moyenne est de"+" "+str(moyenne_humidite[0]))
         else:
             print("On effectue donc le plan C")
@@ -196,7 +196,6 @@ while (True):
             ETR = ET0 * Kc
             V_irrigation = ETR * 10 ** (-2) * 10.5
             moyenne_humidite[0] = humidite[0]
-            print("La teneur en eau moyenne est de"+" "+str(moyenne_humidite[0]))
 
     # Le volume d'eau est-il suffisant ?
     if V_irrigation < 0.025:  # regarde si le volume à irriguer est assez important, on fait cela à cause de l'incertitude de précision d'arrosage des petits volumes
@@ -214,7 +213,7 @@ while (True):
             open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n")  # demande la fermeture de la vanne après le temps d'irrigation calculé plus haut
         else:
             open("valve.txt", 'w').write(str(timestamp) + ";1\n")
-            open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n")
+            open("valve.txt", 'a').write(str(timestamp + 1200) + ";0\n")
             temps_irrigation -= 1200
             n = 1
             while temps_irrigation > 1200:  # implémente le temps non applicable dans cette heure aux heures d'après
