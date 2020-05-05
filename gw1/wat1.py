@@ -210,19 +210,19 @@ while (True):
         n = 0
         if temps_irrigation <= 1200:
             open("valve.txt", 'w').write(str(timestamp) + ";1\n")  # crée un nouveau planning et demande d'ouvrir la vanne à l'instant même
-            open("valve.txt", 'a').write(str(timestamp + temps_irrigation) + ";0\n")  # demande la fermeture de la vanne après le temps d'irrigation calculé plus haut
+            open("valve.txt", 'a').write(str(int(timestamp + temps_irrigation)) + ";0\n")  # demande la fermeture de la vanne après le temps d'irrigation calculé plus haut
         else:
             open("valve.txt", 'w').write(str(timestamp) + ";1\n")
-            open("valve.txt", 'a').write(str(timestamp + 1200) + ";0\n")
+            open("valve.txt", 'a').write(str(int(timestamp + 1200)) + ";0\n")
             temps_irrigation -= 1200
             n = 1
             while temps_irrigation > 1200:  # implémente le temps non applicable dans cette heure aux heures d'après
-                open("valve.txt", 'a').write(str(timestamp + n * 3600) + ";1\n")
-                open("valve.txt", 'a').write(str(timestamp + n * 3600 + 1200) + ";0\n")
+                open("valve.txt", 'a').write(str(int(timestamp + n * 3600)) + ";1\n")
+                open("valve.txt", 'a').write(str(int(timestamp + n * 3600 + 1200)) + ";0\n")
                 temps_irrigation -= 1200
                 n += 1
-            open("valve.txt", 'a').write(str(timestamp + n * 3600) + ";1\n")
-            open("valve.txt", 'a').write(str(timestamp + n * 3600 + temps_irrigation) + ";0\n")
+            open("valve.txt", 'a').write(str(int(timestamp + n * 3600)) + ";1\n")
+            open("valve.txt", 'a').write(str(int(timestamp + n * 3600 + temps_irrigation)) + ";0\n")
         if n==0:
             print("On peut donc uniquement irriguer sur l'heure actuelle")
         else:
