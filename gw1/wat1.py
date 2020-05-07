@@ -117,7 +117,8 @@ while (True):
     if t!=3:
         moyenne_humidite=[sum(humidite[0])/len(humidite[0])]
         supplement_ET0=0 # remet à 0 le complément d'irrigation si entre temps les sondes sont redevenues fonctionnelles
-        print("On effectue donc le plan A et la teneur en eau moyenne est de "+str(moyenne_humidite[0]))
+        print("Plan effectué : plan A")
+        print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,2)))
 
         # Où se situe l'humidité moyenne ?
         if moyenne_humidite[0]>0.285: # regarde si elle est supérieure à la CC
