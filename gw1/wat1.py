@@ -73,6 +73,8 @@ supplement_ET0=0
 # Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
 while (True):
 
+    print("######## Nouvelle irrigation : " + time.strftime("%A %d %B %Y %H:%M:%S") + " ########") # indique qu'une nouvelle irrigation a eu lieu tel jour et à tel heure
+    
     # Recueil des dernières valeurs de tension des capteurs d'humidité
     dataFile = None
     humidite= [[] for b in range(2)]  # liste stockant les dernières valeurs d'humidité avant puis après irrigation
