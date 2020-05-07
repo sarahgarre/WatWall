@@ -73,8 +73,8 @@ supplement_ET0=0
 # Your program must create a data file with one column with the Linux EPOCH time and your valve state (0=closed, 1=opened)
 while (True):
 
-    print("######## Nouvelle irrigation : " + time.strftime("%A %d %B %Y %H:%M:%S") + " ########") # indique qu'une nouvelle irrigation a eu lieu tel jour et à tel heure
-    
+    print("######## Nouvelle irrigation : " + time.strftime("%A %d %B %Y %H:%M:%S") + " ########")  # indique qu'une nouvelle irrigation a eu lieu tel jour et à tel heure
+
     # Recueil des dernières valeurs de tension des capteurs d'humidité
     dataFile = None
     humidite= [[] for b in range(2)]  # liste stockant les dernières valeurs d'humidité avant puis après irrigation
@@ -118,7 +118,7 @@ while (True):
         moyenne_humidite=[sum(humidite[0])/len(humidite[0])]
         supplement_ET0=0 # remet à 0 le complément d'irrigation si entre temps les sondes sont redevenues fonctionnelles
         print("Plan effectué : plan A")
-        print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,2)))
+        print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,2))+" %")
 
         # Où se situe l'humidité moyenne ?
         if moyenne_humidite[0]>0.285: # regarde si elle est supérieure à la CC
@@ -193,7 +193,7 @@ while (True):
             V_irrigation = ETR * 10 ** (-2) * 10.5 # volume qui a été perdu par évapotranspiration
             moyenne_humidite= [humidite[0][0]]
             print("Volume irrigué : "+str(int(V_irrigation*1000))+" mL")
-            print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,2)))
+            print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,4))+" %")
         else:
             print("Plan effectué : plan C")
             ET0=float(open("../WatWall/gw1/ET0.csv", 'r').read().split("\n")[J - 1]) # trouve la valeur moyenne d'ET0 pour aujourd'hui dans notre fichier
@@ -202,7 +202,7 @@ while (True):
             V_irrigation = ETR * 10 ** (-2) * 10.5
             moyenne_humidite= [humidite[0][0]]
             print("Volume irrigué : "+str(int(V_irrigation*1000))+" mL")
-            print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,2)))
+            print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,4))+" %")
 
     # Le volume d'eau est-il suffisant ?
     if V_irrigation < 0.025:  # regarde si le volume à irriguer est assez important, on fait cela à cause de l'incertitude de précision d'arrosage des petits volumes
@@ -271,16 +271,18 @@ while (True):
             del humidite[1][0]
             del humidite[1][2]
         moyenne_humidite.append(sum(humidite[1]) / len(humidite[1]))
-        print("Teneur en eau moyenne après irrigation : "+str(round(moyenne_humidite[1]*100,2)))
+        print("Teneur en eau moyenne après irrigation : "+str(round(moyenne_humidite[1]*100,4))+" %")
 
         # Vérification de l'augmentation de l'humidité moyenne
         if moyenne_humidite[1] - moyenne_humidite[0] > 0:  # regarde si la différence d'humidité moyenne est positive, preuve qu'elle a bien eu lieu
             print("C'est donc plus élevé que 4 heures plus tôt, l'irrigation a fonctionné :)")
+            print("######## Fin du processus d'irrigation : " + time.strftime("%A %d %B %Y %H:%M:%S") + " ########")
+            print("")
             sys.stdout.flush()
             time.sleep(20*60*60)  # fait une pause de 20h dans l'éxécution
         else:
             print("Aïe l'irrigation n'a pas fonctionné, bon bah on recommence:(") # si celle-ci n'a pas augmenté le programme recommence depuis le début des calculs
-
+            print("")
 
 
 
