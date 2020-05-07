@@ -137,84 +137,150 @@ while (True):
     # b. Choose to use Plan A or not
 
     # ---------------------------------------------------------------------------
-    # 1. Parameters
+    # 5.1) Parameters
 
     # Acceptable standard deviation
-    SD_threshold = 0.03  # Humidity sensor uncertainty[-]
-
-    # Outliers
-    outlier_max = 0.9  # Maximal water content that can be encountered [cm3/cm3]
-    outlier_min = 0.3  # Minimal water content that can be encountered [cm3/cm3]
+    std_threshold = 0.03  # Humidity sensor uncertainty[-]
 
     # --------------------------------------------------------------------------
-    # 2. Calculate indicators
-
-    # ------------------------------
-    # NaN values
+    # 5.2) Check for NaN values
 
     # Build lists
-    HUM7 = []
-    HUM8 = []
-    HUM9 = []
+    Vraw7 = []
+    Vraw8 = []
+    Vraw9 = []
     length_result = len(result[0].get('datapoints'))
     for i in range(0, length_result):
-        HUM7.append(result[0].get('datapoints')[i][0])
-        HUM8.append(result[1].get('datapoints')[i][0])
-        HUM9.append(result[2].get('datapoints')[i][0])
-    print 'HUM7 [V]', HUM7
-    print 'HUM8 [V]', HUM8
-    print 'HUM9 [V]', HUM9
+        Vraw7.append(result[0].get('datapoints')[i][0])
+        Vraw8.append(result[1].get('datapoints')[i][0])
+        Vraw9.append(result[2].get('datapoints')[i][0])
+    print 'HUM7 [V]', Vraw7
+    print 'HUM8 [V]', Vraw8
+    print 'HUM9 [V]', Vraw9
 
     # Find NaN values
-    HUM7_missing = []
-    HUM8_missing = []
-    HUM9_missing = []
+    Vraw7_missing = []
+    Vraw8_missing = []
+    Vraw9_missing = []
     for i in range(0, length_result):
-        HUM7_missing.append(math.isnan(HUM7[i]))
-        HUM8_missing.append(math.isnan(HUM8[i]))
-        HUM9_missing.append(math.isnan(HUM9[i]))
-    print HUM7_missing
+        Vraw7_missing.append(math.isnan(Vraw7[i]))
+        Vraw8_missing.append(math.isnan(Vraw8[i]))
+        Vraw9_missing.append(math.isnan(Vraw8[i]))
+    print Vraw7_missing
 
-    # ------------------------------
-    # Calculate Standard deviation of the signal
+    # --------------------------------------------------------------------------
+    # 5.3). Check for outliers
 
-    # average signal [V]
-    V_mean = []  # Initialization of the list containing mean voltage
-    for i in range(3):
-        length_result = len(result[i].get('datapoints'))
-        V_sum = 0
-        for j in range(0, length_result):
-            V_sum += result[i].get('datapoints')[j][0]
-        V_mean.append(V_sum / length_result)
-    print 'V_mean [V]:', V_mean
+    # build function
+    def detect_outlier(list_data, threshold):
 
-    # standard deviation of the signal
-    V_SD = []
-    for i in range(3):
-        length_result = len(result[i].get('datapoints'))
-        V_var = 0  # Variance initialization
-        for j in range(0, length_result):
-            V_var += (result[i].get('datapoints')[j][0] - V_mean[i]) ** 2 / length_result
-        V_SD.append(math.sqrt(V_var) / V_mean[i])
-    print 'V_var [V]:', V_var
-    print 'V_SD [-]:', V_SD
+        length_list = len(list_data)
+        # mean
+        mean = math.fsum(list_data)/length_list                 # Compute mean
 
-    # Check for conditions
-    if (
-            # NaN values
-            all(x == False for x in HUM7_missing) and all(x == False for x in HUM8_missing) and all(x == False for x in HUM9_missing) and
-            # Standard deviation
-            all(x < SD_threshold for x in V_SD) and
-            # Outliers
-            all(x > outlier_min for x in HUM7) and all(x > outlier_min for x in HUM8) and all(x > outlier_min for x in HUM9) and
-            all(x < outlier_max for x in HUM7) and all(x < outlier_max for x in HUM8) and all(x < outlier_max for x in HUM9)
-            ):
-        print 'Plan A can be run'
+        # standard deviation
+        var = 0                                                     # Initialize variance
+        for j in range(0, length_list):
+            var += (list_data[i] - mean) ** 2 / length_list     # Compute variance
+        std = math.sqrt(var) / mean                             # Compute standard deviation
+
+        outliers = []                                           # Initialize list of outliers
+        for y in list_data:                                     # Loop on data
+            z_score = (y - mean) / std                          # Compute z-score
+            if abs(z_score) > threshold:                        # z-score compared to a threshold
+                outliers.append(y)                              # y considered as an outlier
+        return outliers
+
+    # Build lists of outliers
+    outliers7 = detect_outlier(Vraw7, 3)
+    outliers8 = detect_outlier(Vraw8, 3)
+    outliers9 = detect_outlier(Vraw9, 3)
+
+    if not outliers7 and not outliers8 and not outliers9:
+        print("No outliers detected")
     else:
-        print 'Plan A can not be run => Start plan B'
+        print "Outliers detected"
+
+    # Compute number of outliers per list
+    NbOut7 = len(outliers7)
+    NbOut8 = len(outliers8)
+    NbOut9 = len(outliers9)
+
+    # --------------------------------------------------------------------------
+    # 5.4) Compute standard deviation
+
+    # mean function
+    def std(list_data):
+
+        length_list = len(list_data)
+        # mean
+        mean = math.fsum(list_data)/length_list                 # Compute mean
+
+        # standard deviation
+        var = 0  # Initialize variance
+        for j in range(0, length_list):
+            var += (list_data[i] - mean) ** 2 / length_list  # Compute variance
+        std = math.sqrt(var) / mean  # Compute standard deviation
+
+        return std
+
+    std7 = std(Vraw7)
+    std8 = std(Vraw8)
+    std9 = std(Vraw9)
+
+    print 'std7 [-]:', std7
+
+    # --------------------------------------------------------------------------
+    # 5.4) Compute standard deviation
+
+    # 5.4.1) Check conditions for each sensor
+    conditionA = []                                         # List with 1 if OK and 0 if not OK
+
+    # HUM7
+    if (
+            all(x == False for x in Vraw7_missing) and      # No NaN values
+            (std7 < std_threshold) and                      # Standard deviation < threshold
+            NbOut7 == 0                                     # No outliers
+            ):
+        conditionA.append(1)
+        print 'HUM7 can be used'
+    else:
+        conditionA.append(0)
+        print 'HUM7 can not be used'
+
+    # HUM8
+    if (
+            all(x == False for x in Vraw8_missing) and      # No NaN values
+            (std8 < std_threshold) and                      # Standard deviation < threshold
+            NbOut8 == 0                                     # No outliers
+    ):
+        conditionA.append(1)
+        print 'HUM8 can be used'
+    else:
+        conditionA.append(0)
+        print 'HUM8 can not be used'
+
+    # HUM9
+    if (
+            all(x == False for x in Vraw9_missing) and      # No NaN values
+            (std9 < std_threshold) and                      # Standard deviation < threshold
+            NbOut9 == 0                                     # No outliers
+    ):
+        conditionA.append(1)
+        print 'HUM9 can be used'
+    else:
+        conditionA.append(0)
+        print 'HUM9 can not be used'
+
+    # 5.4.2) Choose to use humidity sensors or not
+    NbHumMin = 2                                            # Minimal number of operating humidity sensor
+    if conditionA.count(1) >= NbHumMin:
+        print("Plan A can be run")
+
+        # Irrigate with if conditionA == 1 to only operating sensors
+    else:
+        print("Go to plan B")
 
 
-    # sleep for 1 hour (in seconds)
-    time.sleep(60 * 60)
-
-
+    # sleep for 24 hours (in seconds)
+    time.sleep(24 * 60 * 60)
