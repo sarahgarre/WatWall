@@ -276,8 +276,8 @@ while (True):
         # Vérification de l'augmentation de l'humidité moyenne
         if moyenne_humidite[1] - moyenne_humidite[0] > 0:  # regarde si la différence d'humidité moyenne est positive, preuve qu'elle a bien eu lieu
             print("C'est donc plus élevé que 4 heures plus tôt, l'irrigation a fonctionné :)")
-            print("######## Fin du processus d'irrigation : " + time.strftime("%A %d %B %Y %H:%M:%S") + " ########")
-            print("")
+            print("######## Fin du processus d'irrigation : " + time.strftime("%A %d %B %Y %H:%M:%S") + " ########") # indique quand le processus d'irrigation s'est terminé
+            print("") # met une ligne vide pour séparer les irrigations, ça rend les choses plus lisibles
             sys.stdout.flush()
             time.sleep(20*60*60)  # fait une pause de 20h dans l'éxécution
         else:
