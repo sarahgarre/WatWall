@@ -111,7 +111,7 @@ while (True):
         z=1
     else:
         z=t # sinon le t correspond au nombre de données supprimées
-    print("Pour les capteurs d'humidités,"+str(z)+" données ont été supprimées")
+    print("Capteurs défaillants : "+str(z)) # indique le nombre de capteurs qui nous semble défectueux
 
     # Combien de valeurs reste-t-il ?
     if t!=3:
@@ -123,12 +123,11 @@ while (True):
         # Où se situe l'humidité moyenne ?
         if moyenne_humidite[0]>0.285: # regarde si elle est supérieure à la CC
             V_irrigation=0 # y'a assez d'eau on n'irrigue pas
-            print("Irriguer n'est pas nécessaire, on est au dessus de la CC")
+            print("Volume irrigué : 0 mL")
         else:
             V_irrigation = (0.285 - moyenne_humidite[0]) * 12.6 # volume d'irrigation nécessaire pour atteindre la CC
-            print("On va irriguer "+str(V_irrigation)+" litres pour atteindre la CC")
+            print("Volume irrigué : "+str(int(V_irrigation*1000))+" mL")
     else:
-        print("Trop de problèmes avec nos valeurs des capteurs d'humidité, on passe au plan B")
         # Receuil des données météo des 24 dernières heures et nécessaires au calcul de l'ETP
         dataFile = None
         meteo = [[] for i in range(6)]  # tableau permettant le stockage des valeurs receuillies
@@ -186,28 +185,29 @@ while (True):
             gamma = 0.665 * meteo[4][q] * 10 ** (-3)
             vitesse_du_vent = meteo[1][q]
             ET0 += (0.408 * delta * Rn + gamma * (0.625 / (273 + meteo[2][q])) * vitesse_du_vent * (es - ea)) / (delta + gamma * (1 + 0.34 * vitesse_du_vent))  # stocke la somme des ET0 calculés pour chaque minute
-        print("L'ET0 calculé sur les 24 dernières heures est de "+str (ET0)+" mm")
+        print("ET0 des 24 dernières heures "+str (ET0)+" mm")
 
         if 0<ET0<8:
-            print("On effectue donc le plan B")
+            print("Pan effectué : plan B")
             ETR = (ET0+supplement_ET0) * Kc  # valeur réelle de l'ETP en considérant le type et le stade de la culture
             V_irrigation = ETR * 10 ** (-2) * 10.5 # volume qui a été perdu par évapotranspiration
             moyenne_humidite= [humidite[0][0]]
-            print("On va donc irriguer "+str(V_irrigation)+" litres pour compenser l'ETP des 24 dernières heures")
-            print("La teneur en eau moyenne est de "+str(moyenne_humidite[0]))
+            print("Volume irrigué : "+str(int(V_irrigation*1000))+" mL")
+            print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,2)))
         else:
-            print("On effectue donc le plan C")
+            print("Plan effectué : plan C")
             ET0=float(open("../WatWall/gw1/ET0.csv", 'r').read().split("\n")[J - 1]) # trouve la valeur moyenne d'ET0 pour aujourd'hui dans notre fichier
-            print("On prend donc "+str(ET0)+" comme valeur d'ET0 à la place")
+            print("Nouvelle valeur d'ET0 : "+str(ET0))
             ETR = (ET0+supplement_ET0) * Kc
             V_irrigation = ETR * 10 ** (-2) * 10.5
             moyenne_humidite= [humidite[0][0]]
-            print("La teneur en eau moyenne est de " + str(moyenne_humidite[0]))
+            print("Volume irrigué : "+str(int(V_irrigation*1000))+" mL")
+            print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,2)))
 
     # Le volume d'eau est-il suffisant ?
     if V_irrigation < 0.025:  # regarde si le volume à irriguer est assez important, on fait cela à cause de l'incertitude de précision d'arrosage des petits volumes
         supplement_ET0+=ET0
-        print("Le volume d'eau à irriguer est insuffisant, aucune irrigation n'est appliquée ")
+        print("Volume à irriguer insuffisant ")
         print("On a donc ajouté " + str(ET0) + " pour le prochain calcul avec l'ET0")
         sys.stdout.flush()  # permet de regarder aux messages
         time.sleep(24 * 60 * 60)  # ce n'est pas le cas donc on irrigue pas et on attend le jour suivant
@@ -215,7 +215,7 @@ while (True):
         supplement_ET0=0 # remet le supplément à 0 car cette fois avec toutes ces ET0, le volume est devenu suffisant
         # Planning d'irrigation
         temps_irrigation = round(V_irrigation / 0.000416)  # calcul le temps correspondant au volume précédemment calculé
-        print("On va donc ouvrir les vannes pendant "+str(temps_irrigation)+" secondes soit environ "+str(round(temps_irrigation/60))+" minutes")
+        print("Durée d'ouverture de la valve : "+str(int(temps_irrigation/60))+" minutes")
         timestamp = get_timestamp()
         n = 0
         if temps_irrigation <= 1200:
@@ -271,7 +271,7 @@ while (True):
             del humidite[1][0]
             del humidite[1][2]
         moyenne_humidite.append(sum(humidite[1]) / len(humidite[1]))
-        print("La nouvelle teneur en eau moyenne est de "+str(moyenne_humidite[1]))
+        print("Teneur en eau moyenne après irrigation : "+str(round(moyenne_humidite[1]*100,2)))
 
         # Vérification de l'augmentation de l'humidité moyenne
         if moyenne_humidite[1] - moyenne_humidite[0] > 0:  # regarde si la différence d'humidité moyenne est positive, preuve qu'elle a bien eu lieu
