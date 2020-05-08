@@ -96,6 +96,12 @@ while (True):
         humidite[0][o] = ((35.24 * humidite[0][o] - 15.44) / (humidite[0][o] - 0.3747)) / 100
     humidite[0].sort()  # trie les valeurs d'humidité dans l'ordre croissant
 
+    affichage_capteurs=humidite[0] # fait une copie pour permettre de rendre les valeurs à afficher plus lisibles tout en gardant les données d'origine
+    for k in range(0,3): # méthode qui transforme la valeur entre 0 et 1 en un pourcentage avec 4 chiffres après la virgule
+       affichage_capteurs[k]=round(affichage_capteurs[k]*100,4)
+    affichage_capteurs.sort()
+    print("Valeurs des capteurs d'humidité avant le test de qualité (%) : "+str(affichage_capteurs).strip('[]')) # affiche les valeurs de nos capteurs en pourcent
+
     # Vérification des données d'humidité
     t=0
     if humidite[0][1]-humidite[0][0]>0.08 : # regarde si la différence entre la plus petite valeur et la valeur centrale est strictement supérieure à 8%
@@ -104,11 +110,6 @@ while (True):
     elif humidite[0][2]-humidite[0][1]>0.08:
         del humidite[0][2]
         t+=2
-
-    affichage_capteurs=humidite[0] # fait une copie pour permettre de rendre les valeurs à afficher plus lisibles tout en gardant les données d'origine
-    for k in range(0,len(affichage_capteurs)): # méthode qui transforme la valeur entre 0 et 1 en un pourcentage avec 4 chiffres après la virgule
-       affichage_capteurs[k]=round(affichage_capteurs[k]*100,4)
-    print("Valeurs des capteurs d'humidité (%) : "+str(affichage_capteurs).strip('[]')) # affiche les valeurs de nos capteurs en pourcent
 
     # Permet d'afficher le nombre de données supprimées
     if t==3: # correspond à l'effacement de 2 données
