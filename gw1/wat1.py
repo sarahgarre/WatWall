@@ -104,6 +104,11 @@ while (True):
         del humidite[0][2]
         t+=2
 
+    affichage_capteurs=humidite[0] # fait une copie pour permettre de rendre les valeurs à afficher plus lisibles tout en gardant les données d'origine
+    for k in range(0,len(affichage_capteurs)): # méthode qui transforme la valeur entre 0 et 1 en un pourcentage avec 4 chiffres après la virgule
+       affichage_capteurs[k]=round(affichage_capteurs[k]*100,4)
+    print("Valeurs des capteurs d'humidité (%) : "+str(affichage_capteurs).strip('[]')) # affiche les valeurs de nos capteurs en pourcent
+
     # Permet d'afficher le nombre de données supprimées
     if t==3: # correspond à l'effacement de 2 données
         z=2
