@@ -216,6 +216,9 @@ while (True):
         supplement_ET0+=ET0
         print("Volume à irriguer insuffisant ")
         print("On a donc ajouté " + str(ET0) + " pour le prochain calcul avec l'ET0")
+        print("")
+        print("######## Fin du processus d'irrigation : " + time.strftime("%A %d %B %Y %H:%M:%S") + " ########")
+        print("")
         sys.stdout.flush()  # permet de regarder aux messages
         time.sleep(24 * 60 * 60)  # ce n'est pas le cas donc on irrigue pas et on attend le jour suivant
     else:
