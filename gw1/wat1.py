@@ -12,7 +12,7 @@ import traceback
 import urllib2 as urllib
 
 user = "GW1"
-test = False
+test = True
 
 if test:
     host = "greenwall.gembloux.uliege.be"
@@ -96,7 +96,7 @@ while (True):
         humidite[0][o] = ((35.24 * humidite[0][o] - 15.44) / (humidite[0][o] - 0.3747)) / 100
     humidite[0].sort()  # trie les valeurs d'humidité dans l'ordre croissant
 
-    affichage_capteurs=humidite[0] # fait une copie pour permettre de rendre les valeurs à afficher plus lisibles tout en gardant les données d'origine
+    affichage_capteurs=list(humidite[0]) # fait une copie pour permettre de rendre les valeurs à afficher plus lisibles tout en gardant les données d'origine
     for k in range(0,3): # méthode qui transforme la valeur entre 0 et 1 en un pourcentage avec 4 chiffres après la virgule
        affichage_capteurs[k]=round(affichage_capteurs[k]*100,4)
     affichage_capteurs.sort()
@@ -125,7 +125,7 @@ while (True):
         moyenne_humidite=[sum(humidite[0])/len(humidite[0])]
         supplement_ET0=0 # remet à 0 le complément d'irrigation si entre temps les sondes sont redevenues fonctionnelles
         print("Plan effectué : plan A")
-        print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,2))+" %")
+        print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,4))+" %")
 
         # Où se situe l'humidité moyenne ?
         if moyenne_humidite[0]>0.285: # regarde si elle est supérieure à la CC
