@@ -130,6 +130,7 @@ while (True):
         # Où se situe l'humidité moyenne ?
         if moyenne_humidite[0]>0.285: # regarde si elle est supérieure à la CC
             V_irrigation=0 # y'a assez d'eau on n'irrigue pas
+            ET0=0
             print("Volume irrigué : 0 mL")
         else:
             V_irrigation = (0.285 - moyenne_humidite[0]) * 12.6 # volume d'irrigation nécessaire pour atteindre la CC
