@@ -57,7 +57,7 @@ Kl = 0.7
 # Waiting time between first irrigation and post-irrig check
 waiting_time = 3600 * 2
 
-# Default irrigation time
+# Default irrigation time (in seconds !)
 default_irrig = 60 * 30
 
 
@@ -177,7 +177,7 @@ while (True):
     somme1 = 0
     somme2 = 0
     somme3 = 0
-    for i in range(0, len(result[0].get('datapoints'))):
+    for i in range(0, len(result[0].get('datapoints'))-1):
         somme1 = somme1 + result[0].get('datapoints')[i][0]
         somme2 = somme2 + result[1].get('datapoints')[i][0]
         somme3 = somme3 + result[2].get('datapoints')[i][0]
@@ -454,10 +454,10 @@ while (True):
 
             print "* The dose of water to apply today is ", round(Dose, 3), "L"
 
-            # Valve opening time - t[min]
-            t = Dose / Q
+            # Valve opening time - t[sec]
+            t = (Dose / Q)*60
 
-            print "* The valve will be opened for", round(t, 2), " minutes"
+            print "* The valve will be opened for", round(t/60, 2), " minutes"
 
             print "* This calculation is made for a Kl of ", Kl
             print "* If canopy cover has evolved on the module this value might have to be updated"
@@ -465,7 +465,7 @@ while (True):
             timestamp = get_timestamp()
             # erase the current file and open the valve in 30 seconds
             open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
-            # append to the file and close the valve 1 minute later
+            # append to the file and close the valve t+30 minute later
             open("valve.txt", 'a').write(str(timestamp + int(t) + 30) + ";0\n")
             print("* Irrigation has been programmed")
 
@@ -608,10 +608,10 @@ while (True):
                 # Calculation of additional watering needed
                 Dose = (Water_Content_Limit * Pot_volume - Last_VWC * Pot_volume)/100
 
-                # Calculation of irrigation time
-                t = Dose / Q
+                # Calculation of irrigation time (seconds)
+                t = (Dose / Q)*60
                 print '* An additional', round(Dose,2), 'L is needed'
-                print '* The valve will be opened for', round(t,2), 'more minutes today'
+                print '* The valve will be opened for', round(t/60,2), 'more minutes today'
 
                 # make irrigation happen
                 timestamp = get_timestamp()
