@@ -103,13 +103,15 @@ while (True):
     print("Valeurs des capteurs d'humidité avant le test de qualité (%) : "+str(affichage_capteurs).strip('[]')) # affiche les valeurs de nos capteurs en pourcent
 
     # Vérification des données d'humidité
-    t=0
-    if humidite[0][1]-humidite[0][0]>0.08 : # regarde si la différence entre la plus petite valeur et la valeur centrale est strictement supérieure à 8%
-        del humidite[0][0]
-        t=1
-    elif humidite[0][2]-humidite[0][1]>0.08:
-        del humidite[0][2]
-        t+=2
+    #t=0
+    #if humidite[0][1]-humidite[0][0]>0.08 : # regarde si la différence entre la plus petite valeur et la valeur centrale est strictement supérieure à 8%
+        #del humidite[0][0]
+        #t=1
+    #elif humidite[0][2]-humidite[0][1]>0.08:
+        #del humidite[0][2]
+        #t+=2
+    t=3
+    humidite[0]=humidite[0][1]
 
     # Permet d'afficher le nombre de données supprimées
     if t==3: # correspond à l'effacement de 2 données
@@ -199,7 +201,7 @@ while (True):
             print("Pan effectué : plan B")
             ETR = (ET0+supplement_ET0) * Kc  # valeur réelle de l'ETP en considérant le type et le stade de la culture
             V_irrigation = ETR * 10 ** (-2) * 10.5 # volume qui a été perdu par évapotranspiration
-            moyenne_humidite= [humidite[0][0]]
+            moyenne_humidite= [humidite[0]]
             print("Volume irrigué : "+str(int(V_irrigation*1000))+" mL")
             print("Teneur en eau moyenne avant irrigation : "+str(round(moyenne_humidite[0]*100,4))+" %")
         else:
