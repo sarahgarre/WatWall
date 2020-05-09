@@ -14,8 +14,8 @@ import urllib2 as urllib
 
 ##############################################################################
 #     Please enter the hour at which program is launched on the server    :
-hour = 15
-minute = 13
+hour = 16
+minute = 0
 ##############################################################################
 #     Please specify if you are testing the program
 test = False
@@ -122,9 +122,9 @@ waiting_time = (24 - hour + 6) * 3600 - (60 * minute)
 print 'The script has been loaded successfully. Irrigation algorithm will start tomorrow at 6 AM, within', waiting_time / 3600, 'hours'
 
 # To get messages in nohup.out
-sys.stdout.flush()
-if not test :
-   time.sleep(waiting_time)
+#sys.stdout.flush()
+#if not test :
+#   time.sleep(waiting_time)
 
 ################################################################################
 #                     *** IRRIGATION DECISION ALGORITHM ***                    #
