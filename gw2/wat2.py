@@ -13,12 +13,13 @@ import traceback
 import urllib2 as urllib
 
 ##############################################################################
-#     Please enter the hour at which program is launched on the server    :
+# Please enter the hour at which program is launched on the server :
 hour = 16
 minute = 0
 ##############################################################################
-#     Please specify if you are testing the program
+# Please specify if you are testing the program & if you want to delay run :
 test = False
+Delay = False
 ##############################################################################
 
 ##################################
@@ -116,15 +117,17 @@ def formatDateGMT(epoch):
 
 delimiters = ' \t\n\r\"\''
 
-# waiting_time is the number of seconds between now and the next 6AM
-waiting_time = (24 - hour + 6) * 3600 - (60 * minute)
+if Delay:
 
-print 'The script has been loaded successfully. Irrigation algorithm will start tomorrow at 6 AM, within', waiting_time / 3600, 'hours'
+    # waiting_time is the number of seconds between now and the next 6AM
+    waiting_time = (24 - hour + 6) * 3600 - (60 * minute) # [seconds]
 
-# To get messages in nohup.out
-#sys.stdout.flush()
-#if not test :
-#   time.sleep(waiting_time)
+    print 'The script has been loaded successfully. Irrigation algorithm will start tomorrow at 6 AM, within', waiting_time / 3600, 'hours'
+
+    # To get messages in nohup.out
+    sys.stdout.flush()
+    time.sleep(waiting_time)
+
 
 ################################################################################
 #                     *** IRRIGATION DECISION ALGORITHM ***                    #
