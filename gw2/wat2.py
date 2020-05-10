@@ -472,7 +472,7 @@ while (True):
             # sleep for 'irrigation time PLUS x hours'
             sys.stdout.flush()
             if not test :
-                time.sleep(t + 60 * waiting_time)
+                time.sleep(t + waiting_time)
 
     ###############################
     #    POST IRRIGATION CHECK    #
