@@ -311,9 +311,9 @@ WATER CONTENT
     H = 12  # box eight [cm]
     Q = 1500  # discharge [cm3/hr]
 
-    theta_fc7 = 0.27  # water content at field capacity in the medium of the sensor HUM7 [cm3/cm3]
+    theta_fc7 = 0.275  # water content at field capacity in the medium of the sensor HUM7 [cm3/cm3]
     theta_fc8 = 0.215  # water content at field capacity in the medium of the sensor HUM8 [cm3/cm3]
-    theta_fc9 = 0.255  # water content at field capacity in the medium of the sensor HUM9 [cm3/cm3]
+    theta_fc9 = 0.26  # water content at field capacity in the medium of the sensor HUM9 [cm3/cm3]
 
     # Water content at field capacity
     theta_fc = [theta_fc7, theta_fc8, theta_fc9]  # water content at field capacity in the box [cm3/cm3]

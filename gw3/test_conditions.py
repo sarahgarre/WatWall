@@ -77,8 +77,8 @@ try:  # urlopen not usable with "with"
     url = "http://" + host + "/api/grafana/search"
     dataFile = urllib.urlopen(url, json.dumps(""), 20)
     result = json.load(dataFile)
-    for index in result:
-        print(index)
+    #for index in result:
+        #print(index)
 except:
     print(u"URL=" + (url if url else "") + \
           u", Message=" + traceback.format_exc())
@@ -114,18 +114,18 @@ while (True):
         gr = {'range': {'from': formatDateGMT(now - (1 * 5 * 60)), 'to': formatDateGMT(now)}, \
               'targets': [{'target': 'HUM7'}, {'target': 'HUM8'}, {'target': 'HUM9'}, {'target': 'SDI11'}]}
         data = json.dumps(gr)
-        print(data)
+        #print(data)
         dataFile = urllib.urlopen(url, data, 20)
         result = json.load(dataFile)
         if result:
-            print(result)
+            #print(result)
             for target in result:
                 # print target
                 index = target.get('target')
                 for datapoint in target.get('datapoints'):
                     value = datapoint[0]
                     stamp = datapoint[1] / 1000
-                    print(index + ": " + formatDate(stamp) + " = " + str(value))
+                    #print(index + ": " + formatDate(stamp) + " = " + str(value))
 
     except:
         print(u"URL=" + (url if url else "") + \
@@ -154,19 +154,33 @@ while (True):
         Vraw7.append(result[0].get('datapoints')[i][0])
         Vraw8.append(result[1].get('datapoints')[i][0])
         Vraw9.append(result[2].get('datapoints')[i][0])
-    print 'HUM7 [V]', Vraw7
-    print 'HUM8 [V]', Vraw8
-    print 'HUM9 [V]', Vraw9
+
+    print (
+"""####################################
+Sensor readings
+####################################"""
+    )
+    print 'HUM7 [V]:', Vraw7
+    print 'HUM8 [V]:', Vraw8
+    print 'HUM9 [V]:', Vraw9
 
     # Find NaN values
-    Vraw7_missing = []
-    Vraw8_missing = []
-    Vraw9_missing = []
+    Vraw7_NaN = []
+    Vraw8_NaN = []
+    Vraw9_NaN = []
     for i in range(0, length_result):
-        Vraw7_missing.append(math.isnan(Vraw7[i]))
-        Vraw8_missing.append(math.isnan(Vraw8[i]))
-        Vraw9_missing.append(math.isnan(Vraw8[i]))
-    print Vraw7_missing
+        Vraw7_NaN.append(math.isnan(Vraw7[i]))
+        Vraw8_NaN.append(math.isnan(Vraw8[i]))
+        Vraw9_NaN.append(math.isnan(Vraw8[i]))
+
+    print (
+"""####################################
+Presence of NaN values
+####################################"""
+    )
+    print 'HUM7:', Vraw7_NaN.count(True)
+    print 'HUM8:', Vraw8_NaN.count(True)
+    print 'HUM9:', Vraw9_NaN.count(True)
 
     # --------------------------------------------------------------------------
     # 5.3). Check for outliers
@@ -192,19 +206,24 @@ while (True):
         return outliers
 
     # Build lists of outliers
-    outliers7 = detect_outlier(Vraw7, 3)
-    outliers8 = detect_outlier(Vraw8, 3)
-    outliers9 = detect_outlier(Vraw9, 3)
-
-    if not outliers7 and not outliers8 and not outliers9:
-        print("No outliers detected")
-    else:
-        print "Outliers detected"
+    Vraw7_outliers = detect_outlier(Vraw7, 3)
+    Vraw8_outliers = detect_outlier(Vraw8, 3)
+    Vraw9_outliers = detect_outlier(Vraw9, 3)
 
     # Compute number of outliers per list
-    NbOut7 = len(outliers7)
-    NbOut8 = len(outliers8)
-    NbOut9 = len(outliers9)
+    Vraw7_NbOut = len(Vraw7_outliers)
+    Vraw8_NbOut = len(Vraw8_outliers)
+    Vraw9_NbOut = len(Vraw9_outliers)
+
+    print (
+"""####################################
+Presence of outliers
+####################################"""
+    )
+    print 'Method: z-scores'
+    print 'HUM7:', Vraw7_NbOut
+    print 'HUM8:', Vraw8_NbOut
+    print 'HUM9:', Vraw9_NbOut
 
     # --------------------------------------------------------------------------
     # 5.4) Compute standard deviation
@@ -227,20 +246,32 @@ while (True):
     std7 = std(Vraw7)
     std8 = std(Vraw8)
     std9 = std(Vraw9)
-
-    print 'std7 [-]:', std7
+    print(
+"""####################################
+Standard deviation
+####################################"""
+    )
+    print 'Threshold [-]:',std_threshold
+    print 'HUM7:', std7
+    print 'HUM8:', std8
+    print 'HUM9:', std9
 
     # --------------------------------------------------------------------------
-    # 5.4) Compute standard deviation
+    # 5.5) Can Plan A be used?
 
-    # 5.4.1) Check conditions for each sensor
+    # 5.5.1) Check conditions for each sensor
     conditionA = []                                         # List with 1 if OK and 0 if not OK
+    print (
+"""####################################
+Are sensor's readings usable?
+####################################"""
+    )
 
     # HUM7
     if (
-            all(x == False for x in Vraw7_missing) and      # No NaN values
+            all(x == False for x in Vraw7_NaN) and      # No NaN values
             (std7 < std_threshold) and                      # Standard deviation < threshold
-            NbOut7 == 0                                     # No outliers
+            Vraw7_NbOut == 0                                     # No outliers
             ):
         conditionA.append(1)
         print 'HUM7 can be used'
@@ -250,9 +281,9 @@ while (True):
 
     # HUM8
     if (
-            all(x == False for x in Vraw8_missing) and      # No NaN values
+            all(x == False for x in Vraw8_NaN) and      # No NaN values
             (std8 < std_threshold) and                      # Standard deviation < threshold
-            NbOut8 == 0                                     # No outliers
+            Vraw8_NbOut == 0                                     # No outliers
     ):
         conditionA.append(1)
         print 'HUM8 can be used'
@@ -262,9 +293,9 @@ while (True):
 
     # HUM9
     if (
-            all(x == False for x in Vraw9_missing) and      # No NaN values
+            all(x == False for x in Vraw9_NaN) and      # No NaN values
             (std9 < std_threshold) and                      # Standard deviation < threshold
-            NbOut9 == 0                                     # No outliers
+            Vraw9_NbOut == 0                                     # No outliers
     ):
         conditionA.append(1)
         print 'HUM9 can be used'
