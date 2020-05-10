@@ -196,7 +196,7 @@ Presence of NaN values
         var = 0                                                     # Initialize variance
         for j in range(0, length_list):
             var += (list_data[i] - mean) ** 2 / length_list     # Compute variance
-        std = math.sqrt(var) / mean                             # Compute standard deviation
+        std = math.sqrt(var)                                    # Compute standard deviation
 
         outliers = []                                           # Initialize list of outliers
         for y in list_data:                                     # Loop on data
