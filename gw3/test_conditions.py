@@ -11,6 +11,7 @@ import os, sys
 import socket
 import traceback
 import urllib2 as urllib
+import os.path
 
 user = "GW3"
 test = True
@@ -308,9 +309,28 @@ Are sensor's readings usable?
     if conditionA.count(1) >= NbHumMin:
         print("Plan A can be run")
 
+        timestamp = get_timestamp()
+        if os.path.isfile('filename.txt'):
+            print ("File exist")
+            # erase the current file and open the valve in 30 seconds
+            open("filename.txt", 'a').write(str(timestamp) + ";A\n")
+        else:
+            print ("File not exist")
+            file("filename.txt","w+")
+            open("filename.txt", 'a').write(str(timestamp) + ";A\n")
+
         # Irrigate with if conditionA == 1 to only operating sensors
     else:
         print("Go to plan B")
+        timestamp = get_timestamp()
+        if os.path.isfile('filename.txt'):
+            print ("File exist")
+            # erase the current file and open the valve in 30 seconds
+            open("filename.txt", 'a').write(str(timestamp) + ";B\n")
+        else:
+            print ("File not exist")
+            file("filename.txt", "w+")
+            open("filename.txt", 'a').write(str(timestamp) + ";B\n")
 
 
     # sleep for 24 hours (in seconds)

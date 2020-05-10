@@ -28,11 +28,9 @@ import traceback
 import urllib2 as urllib
 import csv
 
-
 #_______________________________________________________________________________________________________________________
 # 0) LINES OF CODE TO SET UP COMMUNICATION WITH THE SERVER AND THE SENSORS
 #_______________________________________________________________________________________________________________________
-
 
 #-----------------------------------------------------------------------------------------------------------------------
 # 0.1) Ensure to run in the user home directory
@@ -72,12 +70,10 @@ else:
 def get_timestamp():
     return int(time.time())
 
-
 # Transform an EPOCH time in a lisible date (for Grafana)
 def formatDate(epoch):
     dt = datetime.fromtimestamp(epoch)
     return dt.isoformat()
-
 
 # Transform an EPOCH time in a lisible date (for Grafana)
 def formatDateGMT(epoch):
@@ -167,11 +163,10 @@ while (True):
         Vraw8.append(result[1].get('datapoints')[i][0])
         Vraw9.append(result[2].get('datapoints')[i][0])
         TempHum.append(result[3].get('datapoints')[i][0])
-    print (
-"""__________________________________
-Humidity sensor readings (raw values)
-"""
-    )
+
+    print '__________________________________'
+    print 'Humidity sensor readings (raw values)'
+
     print 'HUM7 [V]:', Vraw7
     print 'HUM8 [V]:', Vraw8
     print 'HUM9 [V]:', Vraw9
@@ -204,57 +199,15 @@ Humidity sensor readings (raw values)
         Vraw9_NaN.append(math.isnan(Vraw8[i]))
         TempHum_NaN.append(math.isnan(TempHum[i]))
 
-    print (
-"""____________________________________
-Presence of NaN values
-"""
-    )
+    print '__________________________________'
+    print 'Presence of NaN values'
+
     print 'HUM7:', Vraw7_NaN.count(True)
     print 'HUM8:', Vraw8_NaN.count(True)
     print 'HUM9:', Vraw9_NaN.count(True)
 
     # --------------------------------------------------------------------------
     # c) Check for outliers (z-scores)
-
-    # build function
-    def detect_outlier(list_data, threshold):
-
-        length_list = len(list_data)
-        # mean
-        mean = math.fsum(list_data)/length_list                 # Compute mean
-
-        # standard deviation
-        var = 0                                                 # Initialize variance
-        for j in range(0, length_list):
-            var += (list_data[i] - mean) ** 2 / length_list     # Compute variance
-        std = math.sqrt(var)                                    # Compute standard deviation
-
-        outliers = []                                           # Initialize list of outliers
-        for y in list_data:                                     # Loop on data
-            z_score = (y - mean) / std                          # Compute z-score
-            if abs(z_score) > threshold:                        # z-score compared to a threshold
-                outliers.append(y)                              # y considered as an outlier
-        return outliers
-
-    # Build lists of outliers
-    Vraw7_outliers = detect_outlier(Vraw7, 3)
-    Vraw8_outliers = detect_outlier(Vraw8, 3)
-    Vraw9_outliers = detect_outlier(Vraw9, 3)
-
-    # Compute number of outliers per list
-    Vraw7_NbOut = len(Vraw7_outliers)
-    Vraw8_NbOut = len(Vraw8_outliers)
-    Vraw9_NbOut = len(Vraw9_outliers)
-
-    print (
-"""____________________________________
-Presence of outliers
-"""
-    )
-    print 'Method: z-scores'
-    print 'HUM7:', Vraw7_NbOut
-    print 'HUM8:', Vraw8_NbOut
-    print 'HUM9:', Vraw9_NbOut
 
     # --------------------------------------------------------------------------
     # d) Compute standard deviation
@@ -277,12 +230,10 @@ Presence of outliers
     std7 = std(Vraw7)
     std8 = std(Vraw8)
     std9 = std(Vraw9)
-    print(
-"""____________________________________
-Standard deviation
-"""
-    )
-    print 'Threshold [-]:',hum_uncert
+    print '__________________________________'
+    print 'Standard deviation'
+
+    print 'Threshold [-]:', hum_uncert
     print 'HUM7:', std7
     print 'HUM8:', std8
     print 'HUM9:', std9
@@ -298,8 +249,7 @@ Standard deviation
     # HUM7
     if (
             all(x == False for x in Vraw7_NaN) and      # No NaN values
-            (std7 < hum_uncert) and                     # Standard deviation < threshold
-            Vraw7_NbOut == 0                            # No outliers
+            (std7 < hum_uncert)                         # Standard deviation < threshold
             ):
         conditionA.append(1)
         print 'HUM7 can be used'
@@ -310,8 +260,7 @@ Standard deviation
     # HUM8
     if (
             all(x == False for x in Vraw8_NaN) and      # No NaN values
-            (std8 < hum_uncert) and                     # Standard deviation < threshold
-            Vraw8_NbOut == 0                            # No outliers
+            (std8 < hum_uncert)                         # Standard deviation < threshold
     ):
         conditionA.append(1)
         print 'HUM8 can be used'
@@ -322,8 +271,7 @@ Standard deviation
     # HUM9
     if (
             all(x == False for x in Vraw9_NaN) and      # No NaN values
-            (std9 < hum_uncert) and                     # Standard deviation < threshold
-            Vraw9_NbOut == 0                            # No outliers
+            (std9 < hum_uncert)                         # Standard deviation < threshold
     ):
         conditionA.append(1)
         print 'HUM9 can be used'
@@ -412,24 +360,22 @@ Standard deviation
                 '''
 
                 if sensor =='HUM7':
-                    C = [1, 1, 1]
+                    C = [0.64901671, 0.00012377, 0.09066688]
                 elif sensor =='HUM8':
-                    C = [1, 1, 1]
+                    C = [0.07814108, -0.000083522780146606, 0.192687225877584]
                 elif sensor =='HUM9':
-                    C = [1, 1, 1]
+                    C = [0.48481775900692, -0.0000513649086714088, 0.130409337555332]
 
                 VWC_corrected = C[0] * VWC + C[1] * TempHum + C[2]
 
                 return VWC_corrected
 
             # Calculation
-
-            """
             for i in range(0, length_result):
                 VWC7[i] = correctTemp(VWC7[i], TempHum[i], 'HUM7')
                 VWC8[i] = correctTemp(VWC8[i], TempHum[i], 'HUM8')
                 VWC9[i] = correctTemp(VWC9[i], TempHum[i], 'HUM9')
-            """
+
             print'__________________________________'
             print'Volumetric water content: temperature correction'
             print 'HUM7 [cm3/cm3]:', VWC7
@@ -487,27 +433,35 @@ Standard deviation
         time_irrigOK = []
         for i in range(0, len(index_OK)):
             time_irrigOK.append(time_irrig[index_OK[i]])
-        print 'Irrigation time [s]:', time_irrig
-        index_max = time_irrig.index(max(time_irrig))
+        index_max = time_irrigOK.index(max(time_irrigOK))
 
         # Irrigation
         timestamp = get_timestamp()
         # erase the current file and open the valve in 30 seconds
         open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
         # append to the file and close the valve time_irrig later
-        open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig[index_max]) + ";0\n")
-        print 'Open the valve for', time_irrig[index_max], 'seconds'
+        open("valve.txt", 'a').write(str(timestamp + 30 + time_irrigOK[index_max]) + ";0\n")
+        print 'Open the valve for', time_irrigOK[index_max], 'seconds'
 
         # Processed finished
         print("valve.txt ready.")
 
-        # Irrigate with if conditionA == 1 to only operating sensors
+        # Record action
+        if os.path.isfile('history.txt'):  # If file history.txt already exists
+            open("history.txt", 'a').write(str(timestamp) + ";A\n")     # Fill file
+        else:  # If file history.txt does not exist
+            file("history.txt", "w+")                                   # Create file
+            open("history.txt", 'a').write(str(timestamp) + ";A\n")     # Fill file
+
     else:
         print("Go to plan B")
 
 # -----------------------------------------------------------------------------------------------------------------------
 # 1.2) Plan B : Irrigation based on ET estimation
 # -----------------------------------------------------------------------------------------------------------------------
+        print '####################################'
+        print 'PLAN B'
+        print '####################################'
 
         """
         sensors used:
@@ -796,12 +750,22 @@ Standard deviation
             open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig) + ";0\n")
             print("valve.txt ready.")
 
+            # Record action
+            if os.path.isfile('history.txt'):  # If file history.txt already exists
+                open("history.txt", 'a').write(str(timestamp) + ";B\n")  # Fill file
+            else:  # If file history.txt does not exist
+                file("history.txt", "w+")  # Create file
+                open("history.txt", 'a').write(str(timestamp) + ";B\n")  # Fill file
+
         else:
             print("Go to plan C")
 
 # -----------------------------------------------------------------------------------------------------------------------
 # 1.3) Plan C : Irrigation based on ET estimated with previous years' data
 # -----------------------------------------------------------------------------------------------------------------------
+            print '####################################'
+            print 'PLAN C'
+            print '####################################'
 
             # Parameters
             A = 1920  # box area [cm2]
@@ -841,6 +805,16 @@ Standard deviation
             outfile.close()  # close valve.txt
             print("valve.txt ready.")
             file.close()  # close the file
+
+            # Record action
+            if os.path.isfile('history.txt'):   # If file history.txt already exists
+                open("history.txt", 'a').write(str(timestamp) + ";C\n")      # Fill file
+            else:                               # If file history.txt does not exist
+                file("history.txt", "w+")                                    # Create file
+                open("history.txt", 'a').write(str(timestamp) + ";C\n")      # Fill file
+
+    # Update nohup.out file
+    sys.stdout.flush()
 
     # sleep for 24 hours (in seconds)
     time.sleep(24 * 60 * 60)
