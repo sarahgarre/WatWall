@@ -1,7 +1,22 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-# Packages of Christophe
+#_______________________________________________________________________________________________________________________
+# DESCRIPTION: Automated irrigation program
+# AUTHORS: Groupe 3
+user = "GW3"
+# Place where the code should run
+test = True     # True to run the code locally
+#test = False   # False to implement the code on the server
+
+#_______________________________________________________________________________________________________________________
+# /!\ PARAMETERS /!\:
+# 1) Irrigation system:
+irrig_syst = 'pot'          # Irrigation system on Christophe's balcony
+#irrig_syst = 'greenwall'   # Greenwall
+
+#_______________________________________________________________________________________________________________________
+# PACKAGES
 
 from datetime import datetime
 import time
@@ -11,14 +26,14 @@ import os, sys
 import socket
 import traceback
 import urllib2 as urllib
+import csv
 
-user = "GW3"
-test = True
-# True to run the code locally
-# False to implement the code on the server
+#_______________________________________________________________________________________________________________________
+# 0) LINES OF CODE TO SET UP COMMUNICATION WITH THE SERVER AND THE SENSORS
+#_______________________________________________________________________________________________________________________
 
-# 1) Ensure to run in the user home directory
-# !!! MUST NOT BE CHANGED !!!
+#-----------------------------------------------------------------------------------------------------------------------
+# 0.1) Ensure to run in the user home directory
 
 if test:
     host = "greenwall.gembloux.uliege.be"
@@ -30,9 +45,9 @@ else:
         os.chdir(DIR_BASE)
     print(os.getcwd())
 
-    # 2)Ensure to be the only instance to run
-    # !!! MUST NOT BE CHANGED !!!
-    # Explanation: if another program is running, it gets killed and replaced by this one
+#-----------------------------------------------------------------------------------------------------------------------
+# 0.2)Ensure to be the only instance to run
+# Explanation: if another program is running, it gets killed and replaced by this one
 
     pid = str(os.getpid())
     _lock_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
@@ -48,64 +63,68 @@ else:
         sys.exit()
 
 
-# 3) Date determination
-# !!! MUST NOT BE CHANGED !!!
+#-----------------------------------------------------------------------------------------------------------------------
+# 0.3) Handling time
 # Explanation: EPOCH time is the number of seconds since 1/1/1970
+
 def get_timestamp():
     return int(time.time())
-
 
 # Transform an EPOCH time in a lisible date (for Grafana)
 def formatDate(epoch):
     dt = datetime.fromtimestamp(epoch)
     return dt.isoformat()
 
-
 # Transform an EPOCH time in a lisible date (for Grafana)
 def formatDateGMT(epoch):
     dt = datetime.fromtimestamp(epoch - (2 * 60 * 60))  # We are in summer and in Belgium !
     return dt.isoformat()
 
-
 delimiters = ' \t\n\r\"\''
 
-# 4) Getting the list of all available sensors
-# !!! MUST NOT BE CHANGED !!!
+#-----------------------------------------------------------------------------------------------------------------------
+# 0.4) Getting the list of all available sensors
 
 dataFile = None
 try:  # urlopen not usable with "with"
     url = "http://" + host + "/api/grafana/search"
     dataFile = urllib.urlopen(url, json.dumps(""), 20)
     result = json.load(dataFile)
-#    for index in result:
-#       print(index)                   # List of available sensors
+    #for index in result:
+        #print(index)
 except:
     print(u"URL=" + (url if url else "") + \
           u", Message=" + traceback.format_exc())
 if dataFile:
     dataFile.close()
 
-# 5) Irrigation scheme: collecting sensor readings, taking a decision to irrigate or not
-# and sending the instructions to the valves
+#_______________________________________________________________________________________________________________________
+# 1) IRRIGATION
+#_______________________________________________________________________________________________________________________
 
-# !!! THIS IS WHERE WE MAKE CHANGES !!!
+# Scheme: collecting sensor readings, taking a decision to irrigate or not and sending the instructions to the valves
+# Output: data file with one column with the Linux EPOCH time and valve state (0=closed, 1=opened)
+
+#-----------------------------------------------------------------------------------------------------------------------
+# 1.1) Plan A : Irrigation based on humidity sensors readings
+#-----------------------------------------------------------------------------------------------------------------------
+
 """
-Objective: Your program must create a data file with one column with the Linux EPOCH time
-and your valve state (0=closed, 1=opened)
+sensors used:   - HUM7 : first humidity sensor [V]
+                - HUM8 : second humidity sensor [V]
+                - HUM9 : third humidity sensor [V]
+                - SDI11 : humidity sensor temperature [°C]
 """
+print (
+"""####################################
+PLAN A
+####################################"""
+    )
 
 while (True):
 
-    # __________________________________________________________________________________________________________________
-    # 5.1) reading all values of the last 5 minutes (5 minutes of 60 seconds)
-
-    """
-    sensors' names:
-        - HUM7 : first humidity sensor [V]
-        - HUM8 : second humidity sensor [V]
-        - HUM9 : third humidity sensor [V]
-        - SDI11 : humidity sensor temperature [°C]
-    """
+#-----------------------------------------------------------------------------------------------------------------------
+# 1.1.1) Reading humidity sensor values of the last 5 minutes (5 minutes of 60 seconds)
 
     dataFile = None
     try:  # urlopen not usable with "with"
@@ -114,18 +133,18 @@ while (True):
         gr = {'range': {'from': formatDateGMT(now - (1 * 5 * 60)), 'to': formatDateGMT(now)}, \
               'targets': [{'target': 'HUM7'}, {'target': 'HUM8'}, {'target': 'HUM9'}, {'target': 'SDI11'}]}
         data = json.dumps(gr)
-        # print(data)                # Display data
+        #print(data)
         dataFile = urllib.urlopen(url, data, 20)
         result = json.load(dataFile)
         if result:
-            # print(result)          # Display results
+            #print(result)
             for target in result:
                 # print target
                 index = target.get('target')
                 for datapoint in target.get('datapoints'):
                     value = datapoint[0]
                     stamp = datapoint[1] / 1000
-                    # print(index + ": " + formatDate(stamp) + " = " + str(value))
+                    #print(index + ": " + formatDate(stamp) + " = " + str(value))
 
     except:
         print(u"URL=" + (url if url else "") + \
@@ -133,220 +152,666 @@ while (True):
     if dataFile:
         dataFile.close()
 
-    # __________________________________________________________________________________________________________________
-    # 5.2) Choose to use Plan A or not
-
-    # ---------------------------------------------------------------------------
-    # 5.1.1) Parameters
-
-    # Acceptable standard deviation
-    SD_threshold = 0.03  # Humidity sensor uncertainty[-]
-
-    # Outliers
-    outlier_max = 0.9  # Maximal water content that can be encountered [cm3/cm3]
-    outlier_min = 0.3  # Minimal water content that can be encountered [cm3/cm3]
-
-    # --------------------------------------------------------------------------
-    # 5.2.2) Calculate indicators
-
-    # ------------------------------
     # Build lists
-    HUM7 = []
-    HUM8 = []
-    HUM9 = []
+    Vraw7 = []
+    Vraw8 = []
+    Vraw9 = []
     TempHum = []
     length_result = len(result[0].get('datapoints'))
     for i in range(0, length_result):
-        HUM7.append(result[0].get('datapoints')[i][0])
-        HUM8.append(result[1].get('datapoints')[i][0])
-        HUM9.append(result[2].get('datapoints')[i][0])
+        Vraw7.append(result[0].get('datapoints')[i][0])
+        Vraw8.append(result[1].get('datapoints')[i][0])
+        Vraw9.append(result[2].get('datapoints')[i][0])
         TempHum.append(result[3].get('datapoints')[i][0])
 
-    print (
-        """
-############################################
-RAW SENSOR'S VALUES
-############################################
-"""
-    )
+    print '__________________________________'
+    print 'Humidity sensor readings (raw values)'
 
-    print 'HUM7 [V]', HUM7
-    print 'HUM8 [V]', HUM8
-    print 'HUM9 [V]', HUM9
-    print 'TempHum [°C]', TempHum
+    print 'HUM7 [V]:', Vraw7
+    print 'HUM8 [V]:', Vraw8
+    print 'HUM9 [V]:', Vraw9
 
+#-----------------------------------------------------------------------------------------------------------------------
+# 1.1.2) Choose to use Plan A or not
+    # Conditions:   - No NaN values
+    #               - No outliers
+    #               - Standard deviation lower than humidity sensors uncertainty
 
-    # __________________________________________________________________________________________________________________
-    # 5.3) Convert raw signal [Volts] in to volumetric water content
+    # ---------------------------------------------------------------------------
+    # a) Parameters
 
-    # --------------------------------------------------------------------------
-    # 5.3.1) Correct temperature influence on raw signal
-
-    def correctTemp(V_raw, TempHum, Tlab, coef):
-        '''
-        correctAir corrects signal [volts] with sensor temperature
-
-        Input:
-        ------
-        Tlab: temperature for which sensors are designed    # [°C]
-        V_raw: raw signal                                   # [Volts]
-        TempHum: sensor temperature array                   # [°C]
-        coef: coefficient of correction                     # [cm3/cm3/°C]
-            - 0.0004 : determined empirically
-            - 0.003 : Nemali et al., 2007
-
-        Output:
-        ------
-        V_correct: volumetric water content array           # [Volts]
-        '''
-
-        V_correct = V_raw + (TempHum - Tlab) * coef
-
-        return V_correct
-
-    # Temperature for which sensors are designed (Nemali & al., 2007)
-    Tlab = 23       # [°C]
-    # Correction coefficient (determined empirically)
-    coef = 0.0004   # [cm3/cm3/°C]
-    # Calculation
-
-    HUM7_correct = []
-    HUM8_correct = []
-    HUM9_correct = []
-    for i in range(0, length_result):
-        HUM7_correct.append(correctTemp(HUM7[i], TempHum[i], Tlab, coef))
-        HUM8_correct.append(correctTemp(HUM8[i], TempHum[i], Tlab, coef))
-        HUM9_correct.append(correctTemp(HUM9[i], TempHum[i], Tlab, coef))
+    # # Minimal number of humidity sensors that meet the conditions
+    NbHumMin = 2
+    # Humidity sensor uncertainty[-]
+    hum_uncert = 0.03
 
     # --------------------------------------------------------------------------
-    # 5.3.2) Convert analogous signal [Volts] into volumetric water content [cm3/cm3]
+    # b) Check for NaN values
 
-    def calib(Vraw, eq_type='man_pot'):
-        '''
-        calib converts the raw signal of an EC-5 sensor with an excitation voltage of 5V to volumetric soil moisture
-
-        Input:
-        ------
-        Vraw: raw data array
-        eq_type: specify which calibration equation you want to use
-            CB: Cédric Bernard, 2018 - Zinco substrate
-                From: TFE of Cedric Bernard
-            meter_2.5V_scaled: METER group manual pot soil equation (scaled)
-            licor_5V: calibration equation for 5V excitation
-                From:       LICOR, 8100_TechTip_EC-5_Probe_Connection_TTP24.pdf
-        Output:
-        ------
-        VWC: volumetric water content array
-        '''
-        if eq_type == 'CB':
-            VWC = (0.3524 * Vraw - 0.1554) / (Vraw - 0.3747)
-        elif eq_type == 'meter_2.5V_scaled':
-            VWC = (8.5 * 0.1 * (Vraw / 2)) - 0.24
-        elif eq_type == 'licor_5V':
-            VWC = (-3.14E-07 * (Vraw/1000)^2) + (1.16E-03 * Vraw/1000) - 6.12E-01
-        else:
-            VWC = (1.3 * (Vraw / 2)) - 0.348
-
-        return VWC
-
-    # Calibration equation used
-    eq_type = 'CB'
-    # Calculation
-    VWC7 = []
-    VWC8 = []
-    VWC9 = []
+    # Find NaN values
+    Vraw7_NaN = []
+    Vraw8_NaN = []
+    Vraw9_NaN = []
+    TempHum_NaN = []
     for i in range(0, length_result):
-        VWC7.append(calib(HUM7_correct[i], eq_type))
-        VWC8.append(calib(HUM8_correct[i], eq_type))
-        VWC9.append(calib(HUM9_correct[i], eq_type))
+        Vraw7_NaN.append(math.isnan(Vraw7[i]))
+        Vraw8_NaN.append(math.isnan(Vraw8[i]))
+        Vraw9_NaN.append(math.isnan(Vraw8[i]))
+        TempHum_NaN.append(math.isnan(TempHum[i]))
 
-    # ----------------------------------------------------
-    # 2. Calibration equations determined by experimentation
-    """
-    Equation:   VWC = a * ln(VWC) + b 
-    From:       Experimentation
+    print '__________________________________'
+    print 'Presence of NaN values'
 
-    # Parameters
-    calib = dict()  # Dictionary initialization
+    print 'HUM7:', Vraw7_NaN.count(True)
+    print 'HUM8:', Vraw8_NaN.count(True)
+    print 'HUM9:', Vraw9_NaN.count(True)
 
-    HUM_name = ['HUM7', 'HUM8', 'HUM9'] # Humidity sensor's name
-    calib[HUM_name[0]] = [0.4019, 1.2082] # a and b parameters
-    calib[HUM_name[1]] = [0.457, 1.2789]
-    calib[HUM_name[2]] = [0.4808, 1.3012]
+    # --------------------------------------------------------------------------
+    # c) Check for outliers (z-scores)
 
-    # Computation
-    for i in range(3):  # loop on humidity sensors
-        length_result = len(result[i].get('datapoints'))
-        print HUM_name[i]
-        for j in range(0, length_result):  # loop on values
-            SWC = result[i].get('datapoints')[j][0]
-            coef = calib.get(HUM_name[i])  # extract the coefficient
-            result[i].get('datapoints')[j][0] = coef[0] * SWC + coef[1]  # calculate the real value
-            print result[i].get('datapoints')[j][0]
-    """
+    # --------------------------------------------------------------------------
+    # d) Compute standard deviation
 
-    # __________________________________________________________________________________________________________________
-    # 5.4) Irrigation
+    # mean function
+    def std(list_data):
 
-    # calculate the average water content
-    def mean(numbers):
-        return float(sum(numbers)) / max(len(numbers), 1)
+        length_list = len(list_data)
+        # mean
+        mean = math.fsum(list_data)/length_list                 # Compute mean
 
-    theta_mean=[]
-    theta_mean.append(mean(VWC7))
-    theta_mean.append(mean(VWC8))
-    theta_mean.append(mean(VWC9))
+        # standard deviation
+        var = 0  # Initialize variance
+        for j in range(0, length_list):
+            var += (list_data[i] - mean) ** 2 / length_list  # Compute variance
+        std = math.sqrt(var) / mean  # Compute standard deviation
 
-    print (
-        """
-############################################
-WATER CONTENT
-############################################
-"""
-    )
-    print 'Mean water content [cm3/cm3]:', theta_mean
+        return std
 
-    # Parameters
-    A = 1920  # box area [cm2]
-    H = 12  # box eight [cm]
-    Q = 1500  # discharge [cm3/hr]
+    std7 = std(Vraw7)
+    std8 = std(Vraw8)
+    std9 = std(Vraw9)
+    print '__________________________________'
+    print 'Standard deviation'
 
-    theta_fc7 = 0.27  # water content at field capacity in the medium of the sensor HUM7 [cm3/cm3]
-    theta_fc8 = 0.215  # water content at field capacity in the medium of the sensor HUM8 [cm3/cm3]
-    theta_fc9 = 0.255  # water content at field capacity in the medium of the sensor HUM9 [cm3/cm3]
+    print 'Threshold [-]:', hum_uncert
+    print 'HUM7:', std7
+    print 'HUM8:', std8
+    print 'HUM9:', std9
 
-    # Water content at field capacity
-    theta_fc = [theta_fc7, theta_fc8, theta_fc9]  # water content at field capacity in the box [cm3/cm3]
-    print 'Water content at field capacity [cm3/cm3]:', theta_fc
+    # --------------------------------------------------------------------------
+    # e) Results of the checks
 
-    # Irrigation time => Water needs in the three layers
-    time_irrig = []
-    for i in range(0, len(theta_fc)):
-        vol = (theta_fc[i] - theta_mean[i]) * A * H  # Irrigation volume [cm3]
-        if vol < 0:
-            time_irrig.append(0)
+    # Check conditions for each sensor
+    conditionA = []                                     # List with 1 if OK and 0 if not OK
+    print '____________________________________'
+    print "Are humidity sensors' readings usable?"
+
+    # HUM7
+    if (
+            all(x == False for x in Vraw7_NaN) and      # No NaN values
+            (std7 < hum_uncert)                         # Standard deviation < threshold
+            ):
+        conditionA.append(1)
+        print 'HUM7 can be used'
+    else:
+        conditionA.append(0)
+        print 'HUM7 can not be used'
+
+    # HUM8
+    if (
+            all(x == False for x in Vraw8_NaN) and      # No NaN values
+            (std8 < hum_uncert)                         # Standard deviation < threshold
+    ):
+        conditionA.append(1)
+        print 'HUM8 can be used'
+    else:
+        conditionA.append(0)
+        print 'HUM8 can not be used'
+
+    # HUM9
+    if (
+            all(x == False for x in Vraw9_NaN) and      # No NaN values
+            (std9 < hum_uncert)                         # Standard deviation < threshold
+    ):
+        conditionA.append(1)
+        print 'HUM9 can be used'
+    else:
+        conditionA.append(0)
+        print 'HUM9 can not be used'
+
+    # --------------------------------------------------------------------------
+    # f) Choose to use humidity sensors or not
+
+    if conditionA.count(1) >= NbHumMin:
+        print("Plan A can be run")
+
+# -----------------------------------------------------------------------------------------------------------------------
+# 1.1.3) Convert analogous signal [Volts] into volumetric water content [cm3/cm3] (if Plan A chosen)
+
+        def calib(Vraw, eq_type):
+            '''
+            calib converts the raw signal of an EC-5 sensor with an excitation voltage of 5V to volumetric soil moisture
+
+            Input:
+            ------
+            V_raw: humidity sensor readings array                   [V]
+            eq_type: specify which calibration equation is used
+                - 'CB': Cédric Bernard, 2018 - Zinco substrate
+                  From: TFE of Cedric Bernard
+                - 'meter_2.5V_scaled': METER group manual pot soil equation (scaled)
+                - 'licor_5V': calibration equation for 5V excitation
+                  From: LICOR, 8100_TechTip_EC-5_Probe_Connection_TTP24.pdf
+            Output:
+            ------
+            VWC: volumetric water content array                     [cm3/cm3]
+            '''
+            if eq_type == 'CB':
+                VWC = (0.3524 * Vraw - 0.1554) / (Vraw - 0.3747)
+            elif eq_type == 'meter_2.5V_scaled':
+                VWC = (8.5 * 0.1 * (Vraw / 2)) - 0.24
+            elif eq_type == 'licor_5V':
+                VWC = (-3.14E-07 * (Vraw / 1000) ^ 2) + (1.16E-03 * Vraw / 1000) - 6.12E-01
+            else:
+                VWC = (1.3 * (Vraw / 2)) - 0.348
+
+            return VWC
+
+        # Calibration equation used
+        eq_type = 'CB'
+        # Calculation
+        VWC7 = []
+        VWC8 = []
+        VWC9 = []
+        for i in range(0, length_result):
+            VWC7.append(calib(Vraw7[i], eq_type))
+            VWC8.append(calib(Vraw8[i], eq_type))
+            VWC9.append(calib(Vraw9[i], eq_type))
+
+        print'__________________________________'
+        print'Volumetric water content: calibration equation'
+        print 'HUM7 [cm3/cm3]:', VWC7
+        print 'HUM8 [cm3/cm3]:', VWC8
+        print 'HUM9 [cm3/cm3]:', VWC9
+
+# -----------------------------------------------------------------------------------------------------------------------
+# 1.1.4) Correct temperature influence on raw signal (if Plan A chosen)
+        # Condition: no NaN values in the humidity sensor temperature array
+        if all(x == False for x in TempHum_NaN):
+
+            def correctTemp(VWC, TempHum, sensor):
+                '''
+                correctTemp corrects VWC  with sensor temperature
+                Source: Cobos, Doug, Colin Campbell, and Decagon Devices. n.d. “Correcting Temperature Sensitivity of
+                        ECH 2 O Soil Moisture Sensors Strategy 1 : Multiple Regression Analysis,” no. 1.
+                ------
+                Input:
+                VWC: humidity sensor readings array                     [V]
+                TempHum: humidity sensor temperature array              [°C]
+                sensor: sensor name
+                    - HUM7
+                    - HUM8
+                    - HUM9
+                ------
+                Output:
+                VWC_corrected: corrected VWC array                      [cm3/cm3]
+                ------
+                Equation:
+                VWC_corrected = C1* VWC + C2 * TempHum + C3
+                '''
+
+                if sensor =='HUM7':
+                    C = [0.64901671, 0.00012377, 0.09066688]
+                elif sensor =='HUM8':
+                    C = [0.07814108, -0.000083522780146606, 0.192687225877584]
+                elif sensor =='HUM9':
+                    C = [0.48481775900692, -0.0000513649086714088, 0.130409337555332]
+
+                VWC_corrected = C[0] * VWC + C[1] * TempHum + C[2]
+
+                return VWC_corrected
+
+            # Calculation
+            for i in range(0, length_result):
+                VWC7[i] = correctTemp(VWC7[i], TempHum[i], 'HUM7')
+                VWC8[i] = correctTemp(VWC8[i], TempHum[i], 'HUM8')
+                VWC9[i] = correctTemp(VWC9[i], TempHum[i], 'HUM9')
+
+            print'__________________________________'
+            print'Volumetric water content: temperature correction'
+            print 'HUM7 [cm3/cm3]:', VWC7
+            print 'HUM8 [cm3/cm3]:', VWC8
+            print 'HUM9 [cm3/cm3]:', VWC9
+
         else:
-            time_irrig.append(int(vol / Q * 3600))  # Irrigation time [s]
-        del vol
+            print'__________________________________'
+            print'Volumetric water content: temperature correction'
+            print 'NaN detected : TempHum can not be used'
 
-    print 'Irrigation time [s]:', time_irrig
 
-    # Find the maximal irrigation time
-    index_max = time_irrig.index(max(time_irrig))
+#-----------------------------------------------------------------------------------------------------------------------
+# 1.1.5) Irrigation based on humidity sensors (if Plan A chosen)
 
-    # Irrigation
-    timestamp = get_timestamp()
-    # erase the current file and open the valve in 30 seconds
-    open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
-    # append to the file and close the valve time_irrig later
-    open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig[index_max]) + ";0\n")
-    print 'Open the valve for', time_irrig[index_max], 'seconds'
+        print'__________________________________'
+        print'Irrigation'
 
-    # Processed finished
-    print("valve.txt ready.")
+        # calculate the average water content
+        def mean(numbers):
+            return float(sum(numbers)) / max(len(numbers), 1)
 
-    # Update nohup.out file
-    sys.stdout.flush()
+        theta_mean = []
+        theta_mean.append(mean(VWC7))
+        theta_mean.append(mean(VWC8))
+        theta_mean.append(mean(VWC9))
+
+        print 'Mean water content [cm3/cm3]:', theta_mean
+
+        # Parameters
+        A = 1920  # box area [cm2]
+        H = 12  # box eight [cm]
+        Q = 1500  # discharge [cm3/hr]
+
+        theta_fc7 = 0.285  # water content at field capacity in the medium of the sensor HUM7 [cm3/cm3]
+        theta_fc8 = 0.225  # water content at field capacity in the medium of the sensor HUM8 [cm3/cm3]
+        theta_fc9 = 0.27  # water content at field capacity in the medium of the sensor HUM9 [cm3/cm3]
+
+        # Water content at field capacity
+        theta_fc = [theta_fc7, theta_fc8, theta_fc9]  # water content at field capacity in the box [cm3/cm3]
+        print 'Water content at field capacity [cm3/cm3]:', theta_fc
+
+        # Irrigation time => Water needs in the three layers
+        time_irrig = []
+        for i in range(0, len(theta_fc)):
+            vol = (theta_fc[i] - theta_mean[i]) * A * H  # Irrigation volume [cm3]
+            if vol < 0:
+                time_irrig.append(0)
+            else:
+                time_irrig.append(int(vol / Q * 3600))  # Irrigation time [s]
+            del vol
+
+        # Find the maximal irrigation time
+        index_OK = [f for f, e in enumerate(conditionA) if e == 1]
+        time_irrigOK = []
+        for i in range(0, len(index_OK)):
+            time_irrigOK.append(time_irrig[index_OK[i]])
+        index_max = time_irrigOK.index(max(time_irrigOK))
+
+        # Irrigation
+        timestamp = get_timestamp()
+        # erase the current file and open the valve in 30 seconds
+        open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
+        # append to the file and close the valve time_irrig later
+        open("valve.txt", 'a').write(str(timestamp + 30 + time_irrigOK[index_max]) + ";0\n")
+        print 'Open the valve for', time_irrigOK[index_max], 'seconds'
+
+        # Processed finished
+        print("valve.txt ready.")
+
+        # Record action
+        if os.path.isfile('history.txt'):  # If file history.txt already exists
+            open("history.txt", 'a').write(str(timestamp) + ";A\n")     # Fill file
+        else:  # If file history.txt does not exist
+            file("history.txt", "w+")                                   # Create file
+            open("history.txt", 'a').write(str(timestamp) + ";A\n")     # Fill file
+
+    else:
+        print("Go to plan B")
+
+# -----------------------------------------------------------------------------------------------------------------------
+# 1.2) Plan B : Irrigation based on ET estimation
+# -----------------------------------------------------------------------------------------------------------------------
+        print '####################################'
+        print 'PLAN B'
+        print '####################################'
+
+        """
+        sensors used:
+        - SDI0 : solar radiation        [W/m2]
+        - SDI1 : rain                   [mm/h]
+        - SDI4: wind speed              [m/s]
+        - SDI7 : air temperature        [°C]
+        - SDI8: vapor pressure          [kPa]
+        - SDI9 : atmospheric pressure   [kPa]
+        - SDI10 : relative humidity     [%]
+        """
+
+# -----------------------------------------------------------------------------------------------------------------------
+# 1.2.1) Reading sensor values of the last 24 hours (24 hours of 60 minutes of 60 seconds)
+
+        dataFile = None
+        try:  # urlopen not usable with "with"
+            url = "http://" + host + "/api/grafana/query"
+            now = get_timestamp()
+            gr = {'range': {'from': formatDateGMT(now - (24 * 60 * 60)), 'to': formatDateGMT(now)},
+                  'targets': [{'target': 'SDI0'}, {'target': 'SDI1'}, {'target': 'SDI4'}, {'target': 'SDI7'},
+                              {'target': 'SDI8'}, {'target': 'SDI9'}, {'target': 'SDI10'}]}
+            data = json.dumps(gr)
+            # print(data)
+            dataFile = urllib.urlopen(url, data, 20)
+            result = json.load(dataFile)
+            if result:
+                # print(result)
+                for target in result:
+                    # print target
+                    index = target.get('target')
+                    for datapoint in target.get('datapoints'):
+                        value = datapoint[0]
+                        stamp = datapoint[1] / 1000
+                        # print(index + ": " + formatDate(stamp) + " = " + str(value))
+        except:
+            print(u"URL=" + (url if url else "") +
+                  u", Message=" + traceback.format_exc())
+        if dataFile:
+            dataFile.close()
+
+        # Build lists
+        solRad = []
+        rain = []
+        windSpeed = []
+        tempAir = []
+        pressVap = []
+        pressAtm = []
+        humRel = []
+        length_result = len(result[0].get('datapoints'))
+        for i in range(0, length_result):
+            solRad.append(result[0].get('datapoints')[i][0])
+            rain.append(result[1].get('datapoints')[i][0])
+            windSpeed.append(result[2].get('datapoints')[i][0])
+            tempAir.append(result[3].get('datapoints')[i][0])
+            pressVap.append(result[4].get('datapoints')[i][0])
+            pressAtm.append(result[5].get('datapoints')[i][0])
+            humRel.append(result[6].get('datapoints')[i][0])
+
+        print '____________________________________________'
+        print 'Sensor values'
+        print 'Solar radiation [W/m2]:', solRad
+
+# -----------------------------------------------------------------------------------------------------------------------
+# 1.2.2) Choose to use Plan A or not
+# Conditions:   - No NaN values
+
+        # ---------------------------------------------------------------------------
+        # a) Parameters
+
+        # --------------------------------------------------------------------------
+        # b) Check for NaN values
+
+        # Find NaN values
+        solRad_NaN = []
+        rain_NaN = []
+        windSpeed_NaN = []
+        tempAir_NaN = []
+        pressVap_NaN = []
+        pressAtm_NaN = []
+        humRel_NaN = []
+        for i in range(0, length_result):
+            solRad_NaN.append(math.isnan(solRad[i]))
+            rain_NaN.append(math.isnan(rain[i]))
+            windSpeed_NaN.append(math.isnan(windSpeed[i]))
+            tempAir_NaN.append(math.isnan(tempAir[i]))
+            pressVap_NaN.append(math.isnan(pressVap[i]))
+            pressAtm_NaN.append(math.isnan(pressAtm[i]))
+            humRel_NaN.append(math.isnan(humRel[i]))
+
+        print '____________________________________________'
+        print 'Presence of NaN values'
+        print 'Solar radiation:', solRad_NaN.count(True)
+        print 'Rain:', rain_NaN.count(True)
+        print 'Wind speed:', windSpeed_NaN.count(True)
+        print 'Air temperature:', tempAir_NaN.count(True)
+        print 'Vapor pressure:', pressVap_NaN.count(True)
+        print 'Atmospheric pressure:', pressAtm_NaN.count(True)
+        print 'Relative humidity:', humRel_NaN.count(True)
+
+        # --------------------------------------------------------------------------
+        # c) Results of the checks
+
+        # Check conditions for each sensor
+        conditionB = []  # List with 1 if OK and 0 if not OK
+        print '____________________________________'
+        print "Are atmospheric sensors' readings usable?"
+
+        # SDI0 : solar radiation
+        if (
+                all(x == False for x in solRad_NaN)  # No NaN values
+        ):
+            conditionB.append(1)
+            print ' - SDI0 (solar radiation) can be used'
+        else:
+            conditionB.append(0)
+            print ' - SDI0 (solar radiation) can not be used'
+
+        # SDI4: wind speed
+        if (
+                all(x == False for x in windSpeed_NaN)  # No NaN values
+        ):
+            conditionB.append(1)
+            print ' - SDI4 (wind speed) can be used'
+        else:
+            conditionB.append(0)
+            print ' - SDI4 (wind speed) can not be used'
+
+        # SDI7 : air temperature
+        if (
+                all(x == False for x in tempAir_NaN)  # No NaN values
+        ):
+            conditionB.append(1)
+            print ' - SDI7 (air temperature) can be used'
+        else:
+            conditionB.append(0)
+            print ' - SDI7 (air temperature) can not be used'
+
+        # SDI8: vapor pressure
+        if (
+                all(x == False for x in pressVap_NaN)  # No NaN values
+        ):
+            conditionB.append(1)
+            print ' - SDI8 (vapor pressure) can be used'
+        else:
+            conditionB.append(0)
+            print ' - SDI8 (vapor pressure) can not be used'
+
+        # SDI9 : atmospheric pressure
+        if (
+                all(x == False for x in pressAtm_NaN)  # No NaN values
+        ):
+            conditionB.append(1)
+            print ' - SDI9 (atmospheric pressure) can be used'
+        else:
+            conditionB.append(0)
+            print ' - SDI9 (atmospheric pressure) can not be used'
+
+        # SDI10 : relative humidity
+        if (
+                all(x == False for x in humRel_NaN)  # No NaN values
+        ):
+            conditionB.append(1)
+            print ' - SDI10 (relative humidity) can be used'
+        else:
+            conditionB.append(0)
+            print ' - SDI10 (relative humidity) can not be used'
+
+        # --------------------------------------------------------------------------
+        # d) Choose to use or not atmospheric sensors
+        if all(x == 1 for x in conditionB):
+            print("Plan B can be run")
+
+# -----------------------------------------------------------------------------------------------------------------------
+# 1.2.3) Convert variables for Penman equation
+            print '____________________________________________'
+            print 'Data conversion for Penman equation'
+
+            # global radiation (SDI0): [W/m2] -> [MJ/m2/day]
+            Rn = 0                                                  # Sum initialization
+            Rn_list = []
+            length_result = len(result[0].get('datapoints'))
+            for i in range(0, length_result):
+                Rn += 60 * solRad[i]                                # Calculate sum [J/m2/day]
+                                                                    # *60 to get the energy per minute [J/min]
+            Rn = Rn / (1E06)                                        # Convert units [MJ/m2/day]
+            print'Rn =', Rn, 'MJ/m2/day'
+
+            # wind speed (SDI4) : mean value over 24 hours [m/s]
+            u_sum = 0                                               # Sum initialization
+            for i in range(0, length_result):
+                u_sum += windSpeed[i]                               # Calculate sum [m/s]
+            u = u_sum / length_result                               # Calculate mean [m/s]
+            print'u =', u, 'm/s'
+
+            # temperature (SDI7) : mean value over 24 hours [°C]
+            T_sum = 0                                               # Sum initialization
+            for i in range(0, length_result):
+                T_sum += tempAir[i]                                 # Calculate sum [°C]
+            T = T_sum / length_result                               # Calculate mean [°C]
+            print'T =', T, '°C'
+
+            # actual vapor pressure (SDI8) : mean value over 24 hours [kPa]
+            e_sum = 0                                               # Sum initialization
+            for i in range(0, length_result):
+                e_sum += pressVap[i]                                # Calculate sum [kPa]
+            e_a = e_sum / length_result                             # Calculate mean [kPa]
+            print'e_a =', e_a, 'kPa'
+
+            # atmospheric pressure (SDI9) : mean value over 24 hours [kPa]
+            p_sum = 0                                               # Sum initialization
+            for i in range(0, length_result):
+                p_sum += pressAtm[i]                                # Calculate sum [kPa]
+            p = p_sum / length_result                               # Calculate mean [kPa]
+            print'p =', p, 'kPa'
+
+            # relative humidity (SDI10) : mean value over 24 hours [%]
+            RH_sum = 0                                              # Sum initialization
+            for i in range(0, length_result):
+                RH_sum += humRel[i]                                 # Calculate sum [%]
+            RH = RH_sum / length_result                             # Calculate mean [%]
+            print'RH =', RH, '%'
+
+            # rain (SDI1) : [mm/hr] -> [mm]
+            P = 0                                                   # Sum initialization
+            for i in range(0, length_result):
+                P += rain[i] / 60                                   # Calculate sum [mm]
+            print'P =', P, 'mm'
+
+# -----------------------------------------------------------------------------------------------------------------------
+# 1.2.4) Calculate parameters of Penman equation
+
+            """
+            - e_sat: saturation vapour pressure [kPa]
+            - gamma: psychrometric constant [kPa/°C]
+            - delta: slope of the vapour pressure curve [kPa/°C]
+            """
+            print '____________________________________________'
+            print 'Parameters of Penman equation'
+
+            # saturation vapour pressure [kPa]
+            e_sat = 0.6108 * math.exp((17.27 * T) / (T + 273.3))
+            print'e_sat =', e_sat, 'kPa'
+            # psychrometric constant [kPa/°C]
+            gamma = 0.665 * p * 1E-03
+            print'gamma =', gamma, 'kPa/°C'
+            # delta [kPa/°C]
+            delta = (4098 * e_sat) / (T + 237.3) ** 2
+            print'delta =', delta, 'kPa/°C'
+
+# -----------------------------------------------------------------------------------------------------------------------
+# 1.2.5) Estimate ET
+
+            print '____________________________________________'
+            print 'ET estimation of the previous day'
+
+            # ET0
+            cst = 900
+            ET0 = (0.408 * delta * Rn + gamma * cst / (T + 273) * u * (e_sat - e_a)) / (delta + gamma * (1 + 0.34 * u))
+            print 'ET0 =', ET0, 'mm/day'
+
+            # ETc
+            Kc = 0.5  # cultural coefficient [-]
+            ET = Kc * ET0 / 10  # Daily evapotranspiration [cm/day]
+            print 'ETc =', ET, 'mm/day'
+
+# -----------------------------------------------------------------------------------------------------------------------
+# 1.2.6) Irrigation
+
+            print'__________________________________'
+            print'Irrigation'
+
+            # Parameters
+            A = 1920  # box area [cm2]
+            Q = 1000  # discharge [cm3/hr]
+
+            # Watering time
+            time_irrig = int((ET - P / 10) * A / Q * 60 * 60)  # Daily watering time [sec] based on ET [cm] and P [cm]
+            print'time_irrig=', time_irrig, 'seconds'
+
+            # Valve command
+            timestamp = get_timestamp()
+            # erase the current file and open the valve in 30 seconds
+            open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
+            # append to the file and close the valve time_irrig later
+            open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig) + ";0\n")
+            print("valve.txt ready.")
+
+            # Record action
+            if os.path.isfile('history.txt'):  # If file history.txt already exists
+                open("history.txt", 'a').write(str(timestamp) + ";B\n")  # Fill file
+            else:  # If file history.txt does not exist
+                file("history.txt", "w+")  # Create file
+                open("history.txt", 'a').write(str(timestamp) + ";B\n")  # Fill file
+
+        else:
+            print("Go to plan C")
+
+# -----------------------------------------------------------------------------------------------------------------------
+# 1.3) Plan C : Irrigation based on ET estimated with previous years' data
+# -----------------------------------------------------------------------------------------------------------------------
+            print '####################################'
+            print 'PLAN C'
+            print '####################################'
+
+            # Parameters
+            A = 1920  # box area [cm2]
+            Q = 1000  # discharge [cm3/hr]
+            Kc = 0.5  # cultural coefficient [-]
+
+            # ET0 file of Gembloux
+            file = open("ET0_2010_2019.csv", "r")  # open the file
+            reader = csv.reader(file, delimiter=";")  # file reading initialization
+
+            # Skip the first two lines
+            next(reader)
+            next(reader)
+
+            outfile = open('valve.txt', 'w')
+
+            # Transform date into epoch time
+            for row in reader:  # loop to go through the reader
+                #print (row[0])  # display rows
+
+                # Convert datetime into epoch
+                hiredate = row[0]  # select date in the list
+                pattern = '%d/%m/%Y %H:%M'  # date format
+                epoch = int(time.mktime(time.strptime(hiredate, pattern)))  # convert date to epoch time
+                #print epoch
+
+                # Calculate irrigation time
+                ET0 = float(row[1])  # Daily reference evapotranspiration [mm/day]
+                ET = Kc * ET0 / 10  # Daily evapotranspiration [cm/day]
+                time_irrig = int(ET * A / Q * 60 * 60)  # Daily watering time based on ET [sec]
+
+                # open the valve the next day (+ 24*60*60) at 00:00
+                outfile.write(str(epoch + 24 * 60 * 60) + ";1\n")
+                # append to the file and close the valve the next day (+ 24*60*60) at 00:00 + time_irrig
+                outfile.write(str(epoch + 24 * 60 * 60 + time_irrig) + ";0\n")
+
+            outfile.close()  # close valve.txt
+            print("valve.txt ready.")
+            file.close()  # close the file
+
+            # Record action
+            if os.path.isfile('history.txt'):   # If file history.txt already exists
+                open("history.txt", 'a').write(str(timestamp) + ";C\n")      # Fill file
+            else:                               # If file history.txt does not exist
+                file("history.txt", "w+")                                    # Create file
+                open("history.txt", 'a').write(str(timestamp) + ";C\n")      # Fill file
 
     # Update nohup.out file
     sys.stdout.flush()
