@@ -18,7 +18,7 @@ hour = 16
 minute = 0
 ##############################################################################
 # Please specify if you are testing the program & if you want to delay run :
-test = False
+test = True
 Delay = False
 ##############################################################################
 
@@ -439,7 +439,7 @@ while (True):
             print('=====================')
 
             print '* WC probe signal =', round(averageHUM456, 2), ' V'
-            print '* The water content in the wall totay is approximated to', int(VWC), "%"
+            print '* The water content in the wall today is approximated to', int(VWC), "%"
 
             # 3/ Check whether irrigation is needed
             print '* Irrigation will start if water content is lower than', int(Water_Content_Limit), '%'
