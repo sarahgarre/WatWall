@@ -6,8 +6,8 @@
 # AUTHORS: Groupe 3
 user = "GW3"
 # Place where the code should run
-#test = True     # True to run the code locally
-test = False    # False to implement the code on the server
+test = True     # True to run the code locally
+#test = False   # False to implement the code on the server
 
 #_______________________________________________________________________________________________________________________
 # /!\ PARAMETERS /!\:

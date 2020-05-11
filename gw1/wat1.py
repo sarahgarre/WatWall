@@ -281,8 +281,8 @@ while (True):
         elif t==2:
             del humidite[1][2]
         elif t==3:
-            del humidite[1][0]
             del humidite[1][2]
+            del humidite[1][0]
         moyenne_humidite.append(sum(humidite[1]) / len(humidite[1]))
         print("Teneur en eau moyenne après irrigation : "+str(round(moyenne_humidite[1]*100,4))+" %")
 
