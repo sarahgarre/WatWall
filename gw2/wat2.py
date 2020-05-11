@@ -14,12 +14,12 @@ import urllib2 as urllib
 
 ##############################################################################
 # Please enter the hour at which program is launched on the server :
-hour = 16
+hour = 17
 minute = 0
 ##############################################################################
 # Please specify if you are testing the program & if you want to delay run :
-test = True
-Delay = False
+test = False
+Delay = True
 ##############################################################################
 
 ##################################
@@ -432,22 +432,16 @@ while (True):
         print "   * Yesterday it rained :            ",round(sum(Pluie)/Area,2), " mm"
         print "   * The ET0 for yesterday was :      ",round(sum(ET0), 2),        " mm"
 
+        print('Irrigation decision :')
+        print('=====================')
+
+        print '* WC probe signal =', round(averageHUM456, 2), ' V'
+        print '* The water content in the wall today is approximated to', int(VWC), "%"
+        print '* Irrigation will start if water content is lower than', int(Water_Content_Limit), '%'
+
         if Irrig_Needed:
 
-            print ""
-            print('Irrigation decision :')
-            print('=====================')
-
-            print '* WC probe signal =', round(averageHUM456, 2), ' V'
-            print '* The water content in the wall today is approximated to', int(VWC), "%"
-
-            # 3/ Check whether irrigation is needed
-            print '* Irrigation will start if water content is lower than', int(Water_Content_Limit), '%'
-
-            if Irrig_Needed :
-                print('* Irrigation is needed')
-            else:
-                print('* Irrigation is NOT needed')
+            print('* Irrigation is needed')
 
             # Computation of total water dose to apply - Dosis[L]
             Dose = sum(ET0) * Kl * Area - sum(Pluie)
@@ -476,6 +470,9 @@ while (True):
             sys.stdout.flush()
             if not test :
                 time.sleep(t + waiting_time)
+
+        else:
+            print('* Irrigation is NOT needed')
 
     ###############################
     #    POST IRRIGATION CHECK    #
@@ -557,19 +554,19 @@ while (True):
             # little trick to remove extra quotes (otherwise under the form '"str"' not readable)...
             WC = Last_WC_HUM4[i]
             somme = somme + float(WC[1:len(WC) - 1])
-        Last_WC_HUM4_mean = somme / N
+        Last_WC_HUM4_mean = somme / (N-1)
 
         somme = 0
         for i in range(1, N):
             WC = Last_WC_HUM5[i]
             somme = somme + float(WC[1:len(WC) - 1])
-        Last_WC_HUM5_mean = somme / N
+        Last_WC_HUM5_mean = somme / (N-1)
 
         somme = 0
         for i in range(1, N):
             WC = Last_WC_HUM6[i]
             somme = somme + float(WC[1:len(WC) - 1])
-        Last_WC_HUM6_mean = somme / N
+        Last_WC_HUM6_mean = somme / (N-1)
 
         # Mean values of the 3 sensors
         Last_WC_mean = (Last_WC_HUM4_mean + Last_WC_HUM5_mean + Last_WC_HUM6_mean) / 3
@@ -602,11 +599,12 @@ while (True):
             print "* Post watering check can be processed"
             print "* Wc value for the last 5 minutes have been recorded"
 
+            print '* WC probe signal =', round(Last_WC_mean, 2), 'V'
+            print '* Water content is now at', int(Last_VWC), '%'
+
             # Determine if additional watering is needed
-            if Last_WC_mean < Water_Content_Limit:
-                print '* WC probe signal =', round(Last_WC_mean,2), 'V'
-                print '* Water content is now at', int(Last_VWC), '%'
-                print('* This is too low, extra water is needed')
+            if Last_VWC < Water_Content_Limit:
+                print '* This is too low, extra water is needed'
 
                 # Calculation of additional watering needed
                 Dose = (Water_Content_Limit * Pot_volume - Last_VWC * Pot_volume)/100
@@ -624,7 +622,6 @@ while (True):
                 open("valve.txt", 'a').write(str(timestamp + int(t) + 30) + ";0\n")
                 print("* Extra watering has been programed")
             else:
-                print '* Water content is now at', int(Last_WC_mean), '%'
                 print('* This is sufficient, no extra watering is needed')
         else:
             print "* The probes are not working anymore, post watering check is not possible today"
