@@ -6,8 +6,8 @@
 # AUTHORS: Groupe 3
 user = "GW3"
 # Place where the code should run
-test = True     # True to run the code locally
-#test = False   # False to implement the code on the server
+#test = True     # True to run the code locally
+test = False    # False to implement the code on the server
 
 #_______________________________________________________________________________________________________________________
 # /!\ PARAMETERS /!\:
@@ -408,7 +408,7 @@ while (True):
         # Parameters
         A = 1920  # box area [cm2]
         H = 12  # box eight [cm]
-        Q = 1500  # discharge [cm3/hr]
+        Q = 1000  # discharge [cm3/hr]
 
         theta_fc7 = 0.285  # water content at field capacity in the medium of the sensor HUM7 [cm3/cm3]
         theta_fc8 = 0.225  # water content at field capacity in the medium of the sensor HUM8 [cm3/cm3]
