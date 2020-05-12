@@ -71,14 +71,14 @@ if dataFile:
 # Collecte des données d'humidité et de pluie sur le dernier mois
 
 dataFile = None
-Emplacement=["HUM1.csv","HUM2.csv","HUM3.csv","Pluie.csv"] # donne dans quel fichier csv les données doivent être ajoutées
+Emplacement=['HUM1.csv','HUM2.csv','HUM3.csv','Pluie.csv'] # donne dans quel fichier csv les données doivent être ajoutées
 p=0 # Compteur qui permet de passer au fichier csv suivant
 for k in range(0,4): # initialise les fichiers csv comme étant initialement vides
-    open(Emplacement[k],'w').write("")
+    open("Graphiques/"+Emplacement[k],'w').write("")
 try:  # urlopen not usable with "with"
     url = "http://" + host + "/api/grafana/query"
     now = get_timestamp()
-    gr = {'range': {'from': formatDateGMT(now - (30*24 * 60 * 60)), 'to': formatDateGMT(now)}, \
+    gr = {'range': {'from': formatDateGMT(now - (30 * 24 * 60 * 60)), 'to': formatDateGMT(now)}, \
           'targets': [{'target': 'HUM1'}, {'target': 'HUM2'}, {'target': 'HUM3'}, {'target': 'SDI1'}]}
     data = json.dumps(gr)
     dataFile = urllib.urlopen(url, data, 20)
@@ -89,10 +89,14 @@ try:  # urlopen not usable with "with"
             for datapoint in target.get('datapoints'):
                 value = datapoint[0]
                 stamp = datapoint[1] / 1000
-                open(Emplacement[p],'a').write(value)
+                open("Graphiques/"+Emplacement[p],'a').write(str(value)+"\n")
             p+=1
 except:
     print(u"URL=" + (url if url else "") + \
           u", Message=" + traceback.format_exc())
 if dataFile:
     dataFile.close()
+
+# Conversion des tensions en teneur en eau
+for o in range(0, 3):
+    for u in range(0,len(result[o].get('datapoints'))+1):
