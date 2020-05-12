@@ -89,7 +89,10 @@ try:  # urlopen not usable with "with"
             for datapoint in target.get('datapoints'):
                 value = datapoint[0]
                 stamp = datapoint[1] / 1000
-                open("Graphiques/"+Emplacement[p],'a').write(str(value)+"\n")
+                if p==3:
+                    open("Graphiques/"+Emplacement[p],'a').write(str(value)+"\n") # note juste la valeur si c'est pas pour l'humidité
+                else:
+                    open("Graphiques/" + Emplacement[p], 'a').write(str(round((35.24*value-15.44)/(value-0.3747),4)) + "\n") # en plus fait la conversion en humidité
             p+=1
 except:
     print(u"URL=" + (url if url else "") + \
@@ -97,6 +100,4 @@ except:
 if dataFile:
     dataFile.close()
 
-# Conversion des tensions en teneur en eau
-for o in range(0, 3):
-    for u in range(0,len(result[o].get('datapoints'))+1):
+
