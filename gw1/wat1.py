@@ -12,7 +12,7 @@ import traceback
 import urllib2 as urllib
 
 user = "GW1"
-test = False
+test = True
 
 if test:
     host = "greenwall.gembloux.uliege.be"
