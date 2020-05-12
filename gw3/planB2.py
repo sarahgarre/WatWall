@@ -3,7 +3,6 @@ import time
 import os,sys
 import socket
 
-
 # Parameters
 A=1920           # box area [cm2]
 Q=1000           # discharge [cm3/hr]
