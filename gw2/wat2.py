@@ -47,6 +47,7 @@ LIM_P = 0.0678
 LIM_HUM4 = 0.1131
 LIM_HUM5 = 0.1340
 LIM_HUM6 = 0.1135
+#TODO compute std space
 LIM_HUM456 = 1
 
 # Minimum water content admissible
@@ -60,6 +61,11 @@ waiting_time = 3600 * 2
 
 # Default irrigation time (in seconds !)
 default_irrig = 60 * 30
+
+# Dimensions of the pot/module [m2]
+Area = 0.75 * 0.14
+# Volume of the pot/module [L]
+Pot_volume = 12.6
 
 
 ##########################################
@@ -122,11 +128,17 @@ if Delay:
     # waiting_time is the number of seconds between now and the next 6AM
     start_delay = (24 - hour + 6) * 3600 - (60 * minute) # [seconds]
 
-    print 'The script has been loaded successfully. Irrigation algorithm will start tomorrow at 6 AM, within', start_delay / 3600, 'hours'
+    timestamp = get_timestamp()
+
+    print 'The script has been loaded successfully at', time.strftime('%I:%M%p', time.localtime(timestamp))
+    print 'Irrigation algorithm will start tomorrow at',  time.strftime('%I:%M%p', time.localtime(timestamp+start_delay)), ', within', start_delay / 3600, 'hours'
 
     # To get messages in nohup.out
     sys.stdout.flush()
     time.sleep(start_delay)
+else:
+    print 'No delay before starting the scrip has been set'
+    print 'The script will start right away'
 
 
 ################################################################################
@@ -135,11 +147,13 @@ if Delay:
 
 while (True):
 
-    print('=========================================================================')
-    print ""
-    print('A new day of irrigation management of the WattWall starts')
-    print('=========================================================')
+    print '========================================================================='
+    print 'A new day of irrigation management of the WattWall starts'
+    print '========================================================='
 
+    timestamp = get_timestamp()
+    print 'Today is', time.strftime('%A %d %B %Y', time.localtime(timestamp))
+    print 'It is now', time.strftime('%I:%M%p', time.localtime(timestamp)),', watering of the living wall module will start'
 
     # Getting tomorrow starting time  (for script shut down period)
     tomorrow = get_timestamp() + 24 * 60 * 60
@@ -148,7 +162,7 @@ while (True):
     #    Data collection    #
     #########################
 
-    print('* Data from the last 24h is being collected...')
+    print('Data from the last 24h is being collected...')
     dataFile = None
     try:  # urlopen not usable with "with"
         url = "http://" + host + "/api/grafana/query"
@@ -176,6 +190,8 @@ while (True):
     if dataFile:
         dataFile.close()
 
+
+    # TODO mean WC over 24h or 5 min ??
     # mean HUM value calculation
     somme1 = 0
     somme2 = 0
@@ -194,14 +210,17 @@ while (True):
     # Mean water content value - averageHUM456
     averageHUM456 = (averageHUM4 + averageHUM5 + averageHUM6) / 3
 
+    # TODO here thze std is over the full day ...
     # std deviation between sensors
-    std_HUM456 = math.sqrt(pow((averageHUM4 - averageHUM456), 2) + pow((averageHUM5 - averageHUM456), 2) + pow((averageHUM6 - averageHUM456), 2))
+    # sqrt( (1/N-1) * sum(measure - mean)^2 )
+    std_HUM456 = math.sqrt((1/float(2))*(pow((averageHUM4 - averageHUM456), 2) + pow((averageHUM5 - averageHUM456), 2) + pow((averageHUM6 - averageHUM456), 2)))
 
     VWC = m_calib * averageHUM456 + p_calib
 
     ###########################
     #    Data QUALIY CHECK    #
     ###########################
+    print 'Reliability of the collected data will determined'
 
     # 3/ computation of std for water content probes
 
@@ -219,9 +238,10 @@ while (True):
         SCE_HUM5 = SCE_HUM5 + pow((result[1].get('datapoints')[i][0] - averageHUM5), 2)
         SCE_HUM6 = SCE_HUM6 + pow((result[2].get('datapoints')[i][0] - averageHUM6), 2)
     # computation of  std
-    std_HUM4 = math.sqrt((1 / N) * SCE_HUM4)
-    std_HUM5 = math.sqrt((1 / N) * SCE_HUM5)
-    std_HUM6 = math.sqrt((1 / N) * SCE_HUM6)
+    # sqrt( (1/N-1) * sum(measure - mean)^2 )
+    std_HUM4 = math.sqrt((1/float(N-1))  * SCE_HUM4)
+    std_HUM5 = math.sqrt((1/float(N-1))  * SCE_HUM5)
+    std_HUM6 = math.sqrt((1/float(N-1))  * SCE_HUM6)
 
     # 4/ computation of std for weather station data
 
@@ -274,31 +294,30 @@ while (True):
         SCE_Thr = SCE_Thr + pow((result[6].get('datapoints')[i][0] - mean_Thr), 2)
         SCE_u2 = SCE_u2 + pow((result[5].get('datapoints')[i][0] - mean_u2), 2)
         SCE_P = SCE_P + pow((result[8].get('datapoints')[i][0] - mean_P), 2)
-        # compuation of std
-    std_Rn = math.sqrt((1 / N) * SCE_Rn)
-    std_Thr = math.sqrt((1 / N) * SCE_Thr)
-    std_u2 = math.sqrt((1 / N) * SCE_u2)
-    std_P = math.sqrt((1 / N) * SCE_P)
+    # compuation of std
+    # sqrt( (1/N-1) * sum(measure - mean)^2 )
+    std_Rn =  math.sqrt((1/float(N-1))  * SCE_Rn)
+    std_Thr = math.sqrt((1/float(N-1))  * SCE_Thr)
+    std_u2 =  math.sqrt((1/float(N-1))  * SCE_u2)
+    std_P =   math.sqrt((1/float(N-1))  * SCE_P)
 
-    #############################
-    #    IRRIGATION DECISION    #
-    #############################
     print ""
     print 'Sensors quality check :'
     print '======================='
 
     print 'Here is the standard deviation over', int(N), 'minutes for the sensors :'
 
-    print '   * HUM4   :  ', round(std_HUM4, 3)
-    print '   * HUM5   :  ', round(std_HUM5, 3)
-    print '   * HUM6   :  ', round(std_HUM6, 3)
-    print '   * Rn     :  ', round(std_Rn, 3)
-    print '   * Temp   :  ', round(std_Thr, 3)
-    print '   * u2     :  ', round(std_u2, 3)
-    print '   * P      :  ', round(std_P, 3)
+    print '   * HUM4    :  ', round(std_HUM4, 3)
+    print '   * HUM5    :  ', round(std_HUM5, 3)
+    print '   * HUM6    :  ', round(std_HUM6, 3)
+    print '   * Rn      :  ', round(std_Rn, 3)
+    print '   * Temp    :  ', round(std_Thr, 3)
+    print '   * Wind    :  ', round(std_u2, 3)
+    print '   * atmPres :  ', round(std_P, 3)
     print 'Here is the standard deviation over space for HUM sensors :'
-    print '   * HUM456 :  ', round(std_HUM456, 3)
+    print '   * HUM456  :  ', round(std_HUM456, 3)
 
+    print''
     print('Quality check result :')
 
     # 1/  Quality check for all 3 WC sensor
@@ -409,10 +428,7 @@ while (True):
             ET0[j] = (0.408 * delta[j] * SommeRn[j] + gamma[j] * (37 / (Thr[j] + 273)) * u2[j] * (eThr[j] - ea[j])) / (
                     delta[j] + gamma[j] * (1 + 0.34 * u2[j]))
 
-            # K - Dimensions du pot -> Area [m2]
-            Area = 0.75 * 0.14
-
-            # L - Rain for each hour - Pluie [mm/h]
+            # K - Rain for each hour - Pluie [mm/h]
             somme = 0
             length_result = len(result[4].get('datapoints'))
             for i in range(length_result - (60 * 24) + (j * 60) + 1, length_result - ((23 - j) * 60)):
@@ -420,9 +436,9 @@ while (True):
                 Pluvio = somme + result[4].get('datapoints')[i][0] / 60
                 Pluie[j] = Pluvio * Area
 
-        print ""
-        print "Recorded data for the last 24h :"
-        print "================================"
+        print''
+        print "Recorded weather data for the last 24h :"
+        print "========================================"
         print "   * Total radiation was :            ", round(sum(SommeRn), 2),   " MJ/(m2 hour)"
         print "   * Mean temperature was :           ",round(sum(Thr)/24, 2),     " degree C"
         print "   * Mean vapor pressure was :        ",round(sum(ea)/24, 2),      " kPa"
@@ -432,10 +448,11 @@ while (True):
         print "   * Yesterday it rained :            ",round(sum(Pluie)/Area,2), " mm"
         print "   * The ET0 for yesterday was :      ",round(sum(ET0), 2),        " mm"
 
+        print''
         print('Irrigation decision :')
         print('=====================')
 
-        print '* WC probe signal =', round(averageHUM456, 2), ' V'
+        print '* Average WC probe signal =', round(averageHUM456, 2), ' V'
         print '* The water content in the wall today is approximated to', int(VWC), "%"
         print '* Irrigation will start if water content is lower than', int(Water_Content_Limit), '%'
 
@@ -466,13 +483,14 @@ while (True):
             open("valve.txt", 'a').write(str(timestamp + int(t) + 30) + ";0\n")
             print("* Irrigation has been programmed")
 
-            # sleep for 'irrigation time PLUS x hours'
-            sys.stdout.flush()
-            if not test :
-                time.sleep(t + waiting_time)
-
         else:
-            print('* Irrigation is NOT needed')
+            print '* Irrigation is NOT needed'
+            print '* Within', int(waiting_time / 3600), 'hours, water content will be checked again'
+
+        # sleep for 'irrigation time PLUS x hours'
+        sys.stdout.flush()
+        if not test :
+            time.sleep(t + waiting_time)
 
     ###############################
     #    POST IRRIGATION CHECK    #
@@ -483,7 +501,13 @@ while (True):
         print ""
         print 'Post-watering check :'
         print '====================='
-        print '* Watering has been done', int(waiting_time / 3600), "hours ago, it will be checked if extra water is needed"
+
+        print
+        #TODO
+        timestamp = get_timestamp()
+        print 'It is now', time.strftime('%I:%M%p', time.localtime(timestamp))
+        print '* Watering has been done', int(waiting_time / 3600), "hours ago, it will now be checked if extra water is needed"
+        print'* Data is being collected over', int(N), 'minutes...'
 
         # Get WC measures during 5 minutes
         ##################################
@@ -588,18 +612,32 @@ while (True):
             WC = Last_WC_HUM6[i]
             SCE_WC6 = SCE_WC6 + pow(float(WC[1:len(WC) - 1]) - Last_WC_HUM6_mean, 2)
         # Std computation
-        std_WC4 = math.sqrt((1 / N) * SCE_WC4)
-        std_WC5 = math.sqrt((1 / N) * SCE_WC5)
-        std_WC6 = math.sqrt((1 / N) * SCE_WC6)
+        std_WC4 = math.sqrt((1/(float(N)-1)) * SCE_WC4)
+        std_WC5 = math.sqrt((1/(float(N)-1)) * SCE_WC5)
+        std_WC6 = math.sqrt((1/(float(N)-1)) * SCE_WC6)
 
+        # TODO check std over space...
+        std_WC456 = math.sqrt((1/float(2)) * (pow((Last_WC_HUM4_mean - Last_WC_mean), 2) + pow((Last_WC_HUM5_mean - Last_WC_mean), 2) + pow(
+            (Last_WC_HUM6_mean - Last_WC_mean), 2)))
+
+        print '* Reliability of the collected data will determined'
+        print '  Here is the standard deviation over the last', int(N), 'minutes for the HUM sensors :'
+
+        print '   * HUM4   :  ', round(std_WC4, 3)
+        print '   * HUM5   :  ', round(std_WC5, 3)
+        print '   * HUM6   :  ', round(std_WC6, 3)
+
+        # TODO over space of the last measure ?
+        print '  Here is the standard deviation over space for HUM sensors :'
+        print '   * HUM456 :  ', round(std_WC456, 3)
+
+    # TODO add condition for space reliability check
         if std_WC4 < LIM_HUM4 and std_WC5 < LIM_HUM5 and std_WC6 < LIM_HUM6:
-            Pot_volume = 12.6  # [L]
 
             print "* The probes are still working"
             print "* Post watering check can be processed"
-            print "* Wc value for the last 5 minutes have been recorded"
 
-            print '* WC probe signal =', round(Last_WC_mean, 2), 'V'
+            print '* Average WC probe signal =', round(Last_WC_mean, 2), 'V'
             print '* Water content is now at', int(Last_VWC), '%'
 
             # Determine if additional watering is needed
@@ -636,8 +674,9 @@ while (True):
         timestamp = get_timestamp()
         open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
         open("valve.txt", 'a').write(str(int(timestamp + default_irrig) + 30) + ";0\n")
-        print("* A security watering has been processed")
-        print("* Nevertheless, a check up of the monitoring system is needed")
+        print '* A security watering has been processed'
+        print '* The valve will be opened for', round(default_irrig/60, 2), 'minutes today'
+        print '* Nevertheless, a check up of the monitoring system is needed'
 
     print('This is it for today, new watering will start tomorrow at 6AM')
 
