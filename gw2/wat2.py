@@ -218,6 +218,7 @@ while (True):
 
 
     # TODO mean WC over 24h or 5 min ??
+    # indeed at 24h, to be changed
     # mean HUM value calculation
     somme1 = 0
     somme2 = 0
