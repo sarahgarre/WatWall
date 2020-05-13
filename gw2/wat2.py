@@ -18,7 +18,7 @@ hour = 17
 minute = 0
 ##############################################################################
 # Please specify if you are testing the program & if you want to delay run :
-test = False
+test = True
 Delay = False
 ##############################################################################
 
@@ -66,7 +66,6 @@ default_irrig = 60 * 30
 Area = 0.75 * 0.14
 # Volume of the pot/module [L]
 Pot_volume = 12.6
-
 
 ##########################################
 #    COMMUNICATION PROTOCOLS settings    #
@@ -141,15 +140,42 @@ else:
     print 'The script will start right away'
 
 
+print ''
+print 'Here is the list of all the input setting of the script :'
+print '========================================================='
+print ''
+print '* The discharge of the drip pipe :', round(Q, 2), 'L/min'
+print '* The number of successive measures used for data quatily check :', int(N)
+print '* The minimum admissible water content :', int(Water_Content_Limit), '%'
+print '* The landscape coefficient Kl', round(Kl, 2), '-'
+print '* The delay between first irrigation and post irrigation check : ', int(waiting_time/60), 'minute"'
+print '* The surface of the module :', round(Area, 2), 'm2'
+print '* The volume of the module :', round(Pot_volume, 2), 'L'
+print '* The admissible standard deviation for the sensors over time :'
+print '    * HUM4   :', round(LIM_HUM4,2)
+print '    * HUM5   :', round(LIM_HUM5,2)
+print '    * HUM6   :', round(LIM_HUM6,2)
+print '    * Rn     :', round(LIM_Rn, 2)
+print '    * Thr    :', round(LIM_Thr, 2)
+print '    * u2     :', round(LIM_u2, 2)
+print '    * P      :', round(LIM_P, 2)
+print '* The admissible standard deviation for the sensors over time :'
+print '    * HUM456 :', round(LIM_HUM456,2)
+
+
+
+
+
 ################################################################################
 #                     *** IRRIGATION DECISION ALGORITHM ***                    #
 ################################################################################
 
 while (True):
 
-    print '========================================================================='
-    print 'A new day of irrigation management of the WattWall starts'
-    print '========================================================='
+    print ''
+    print '==========================================================================================================='
+    print '=                    A new day of irrigation management of the WattWall starts                            ='
+    print '==========================================================================================================='
 
     timestamp = get_timestamp()
     print 'Today is', time.strftime('%A %d %B %Y', time.localtime(timestamp))
@@ -286,6 +312,8 @@ while (True):
     SCE_u2 = 0
     SCE_P = 0
 
+
+    # TODO split for loop calculation, unconsistant lenth of vectors
     # mean squared error and std calculation
     # For the last N measures of the day
     for i in range(length_result - N, length_result):
