@@ -19,7 +19,7 @@ minute = 0
 ##############################################################################
 # Please specify if you are testing the program & if you want to delay run :
 test = False
-Delay = True
+Delay = False
 ##############################################################################
 
 ##################################
@@ -120,13 +120,13 @@ delimiters = ' \t\n\r\"\''
 if Delay:
 
     # waiting_time is the number of seconds between now and the next 6AM
-    waiting_time = (24 - hour + 6) * 3600 - (60 * minute) # [seconds]
+    start_delay = (24 - hour + 6) * 3600 - (60 * minute) # [seconds]
 
-    print 'The script has been loaded successfully. Irrigation algorithm will start tomorrow at 6 AM, within', waiting_time / 3600, 'hours'
+    print 'The script has been loaded successfully. Irrigation algorithm will start tomorrow at 6 AM, within', start_delay / 3600, 'hours'
 
     # To get messages in nohup.out
     sys.stdout.flush()
-    time.sleep(waiting_time)
+    time.sleep(start_delay)
 
 
 ################################################################################
