@@ -10,6 +10,8 @@ import os,sys
 import socket
 import traceback
 import urllib2 as urllib
+import matplotlib.pyplot as plt
+import numpy as np
 
 user = "GW1"
 test = True
@@ -99,5 +101,18 @@ except:
           u", Message=" + traceback.format_exc())
 if dataFile:
     dataFile.close()
+
+# Tracé des courbes d'humidité et de pluviométrie
+
+debut_abscisse= (datetime.datetime.now()+datetime.timedelta(-30)) # trouve la date 30 jours plus tôt
+fin_abscisse=datetime.datetime.now() # trouve la date du jour
+
+# Nous gardons uniquement la date, pas l'heure qui nous est inutile dans le graph
+debut_abscisse=debut_abscisse.date()
+fin_abscisse=fin_abscisse.date()
+
+X=np.linspace(debut_abscisse,fin_abscisse, 5)
+
+
 
 
