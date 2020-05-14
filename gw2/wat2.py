@@ -18,7 +18,7 @@ hour = 17
 minute = 0
 ##############################################################################
 # Please specify if you are testing the program & if you want to delay run :
-test = True
+test = False
 Delay = False
 ##############################################################################
 
@@ -220,19 +220,23 @@ while (True):
     # TODO mean WC over 24h or 5 min ??
     # indeed at 24h, to be changed
     # mean HUM value calculation
-    somme1 = 0
-    somme2 = 0
-    somme3 = 0
-    for i in range(0, len(result[0].get('datapoints'))-1):
-        somme1 = somme1 + result[0].get('datapoints')[i][0]
-        somme2 = somme2 + result[1].get('datapoints')[i][0]
-        somme3 = somme3 + result[2].get('datapoints')[i][0]
-    averageHUM4 = somme1 / len(result[0].get('datapoints'))
-    averageHUM5 = somme2 / len(result[0].get('datapoints'))
-    averageHUM6 = somme3 / len(result[0].get('datapoints'))
-    # print averageHUM4
-    # print averageHUM5
-    # print averageHUM6
+
+    somme = 0
+    length_result = len(result[0].get('datapoints'))
+    for i in range(length_result-N, length_result):
+        somme = somme + result[0].get('datapoints')[i][0]
+    averageHUM4 = somme / N
+
+    somme = 0
+    length_result = len(result[1].get('datapoints'))
+    for i in range(length_result-N, length_result):
+        somme = somme + result[1].get('datapoints')[i][0]
+    averageHUM5 = somme / N
+    somme = 0
+    length_result = len(result[2].get('datapoints'))
+    for i in range(length_result-5, length_result):
+        somme = somme + result[2].get('datapoints')[i][0]
+    averageHUM6 = somme / N
 
     # Mean water content value - averageHUM456
     averageHUM456 = (averageHUM4 + averageHUM5 + averageHUM6) / 3
@@ -262,12 +266,30 @@ while (True):
     for i in range(length_result - N, length_result):
         # calculation of the sum of deviations
         SCE_HUM4 = SCE_HUM4 + pow((result[0].get('datapoints')[i][0] - averageHUM4), 2)
-        SCE_HUM5 = SCE_HUM5 + pow((result[1].get('datapoints')[i][0] - averageHUM5), 2)
-        SCE_HUM6 = SCE_HUM6 + pow((result[2].get('datapoints')[i][0] - averageHUM6), 2)
     # computation of  std
     # sqrt( (1/N-1) * sum(measure - mean)^2 )
     std_HUM4 = math.sqrt((1/float(N-1))  * SCE_HUM4)
+
+
+    # mean squared error and std calculation
+    length_result = len(result[1].get('datapoints'))
+    # for the last N measures of the day
+    for i in range(length_result - N, length_result):
+        # calculation of the sum of deviations
+        SCE_HUM5 = SCE_HUM5 + pow((result[1].get('datapoints')[i][0] - averageHUM5), 2)
+    # computation of  std
+    # sqrt( (1/N-1) * sum(measure - mean)^2 )
     std_HUM5 = math.sqrt((1/float(N-1))  * SCE_HUM5)
+
+
+    # mean squared error and std calculation
+    length_result = len(result[0].get('datapoints'))
+    # for the last N measures of the day
+    for i in range(length_result - N, length_result):
+        # calculation of the sum of deviations
+        SCE_HUM6 = SCE_HUM6 + pow((result[2].get('datapoints')[i][0] - averageHUM6), 2)
+    # computation of  std
+    # sqrt( (1/N-1) * sum(measure - mean)^2 )
     std_HUM6 = math.sqrt((1/float(N-1))  * SCE_HUM6)
 
     # 4/ computation of std for weather station data
@@ -306,7 +328,6 @@ while (True):
     mean_P = sum_P / N
 
 
-
     # pre allocation
     SCE_Rn = 0
     SCE_Thr = 0
@@ -317,18 +338,39 @@ while (True):
     # TODO split for loop calculation, unconsistant lenth of vectors
     # mean squared error and std calculation
     # For the last N measures of the day
+    length_result = len(result[3].get('datapoints'))
     for i in range(length_result - N, length_result):
         # calculation of the sum of deviations
         SCE_Rn = SCE_Rn + pow((result[3].get('datapoints')[i][0] - mean_Rn), 2)
-        SCE_Thr = SCE_Thr + pow((result[6].get('datapoints')[i][0] - mean_Thr), 2)
-        SCE_u2 = SCE_u2 + pow((result[5].get('datapoints')[i][0] - mean_u2), 2)
-        SCE_P = SCE_P + pow((result[8].get('datapoints')[i][0] - mean_P), 2)
     # compuation of std
     # sqrt( (1/N-1) * sum(measure - mean)^2 )
     std_Rn =  math.sqrt((1/float(N-1))  * SCE_Rn)
+
+
+    length_result = len(result[6].get('datapoints'))
+    for i in range(length_result - N, length_result):
+        # calculation of the sum of deviations
+        SCE_Thr = SCE_Thr + pow((result[6].get('datapoints')[i][0] - mean_Thr), 2)
+    # compuation of std
+    # sqrt( (1/N-1) * sum(measure - mean)^2 )
     std_Thr = math.sqrt((1/float(N-1))  * SCE_Thr)
+
+    length_result = len(result[5].get('datapoints'))
+    for i in range(length_result - N, length_result):
+        # calculation of the sum of deviations
+        SCE_u2 = SCE_u2 + pow((result[5].get('datapoints')[i][0] - mean_u2), 2)
+    # compuation of std
+    # sqrt( (1/N-1) * sum(measure - mean)^2 )
     std_u2 =  math.sqrt((1/float(N-1))  * SCE_u2)
+
+    length_result = len(result[8].get('datapoints'))
+    for i in range(length_result - N, length_result):
+        # calculation of the sum of deviations
+        SCE_P = SCE_P + pow((result[8].get('datapoints')[i][0] - mean_P), 2)
+    # compuation of std
+    # sqrt( (1/N-1) * sum(measure - mean)^2 )
     std_P =   math.sqrt((1/float(N-1))  * SCE_P)
+
 
     print ""
     print 'Sensors quality check :'
