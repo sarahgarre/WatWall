@@ -14,8 +14,8 @@ import urllib2 as urllib
 
 ##############################################################################
 # Please enter the hour at which program is launched on the server :
-hour = 17
-minute = 0
+hour = 16
+minute = 25
 ##############################################################################
 # Please specify if you are testing the program & if you want to delay run :
 test = False
