@@ -19,7 +19,7 @@ minute = 25
 ##############################################################################
 # Please specify if you are testing the program & if you want to delay run :
 test = False
-Delay = False
+Delay = True
 ##############################################################################
 
 ##################################
@@ -561,7 +561,7 @@ while (True):
         # sleep for 'irrigation time PLUS x hours'
         sys.stdout.flush()
         if not test :
-            time.sleep(t + waiting_time)
+            time.sleep(waiting_time)
 
     ###############################
     #    POST IRRIGATION CHECK    #
