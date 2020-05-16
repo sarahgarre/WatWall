@@ -13,8 +13,8 @@ import traceback
 import urllib2 as urllib
 import csv # module for csv files
 
-dstart = int((datetime(2020,5,5,12,0,0)- datetime(1970,1,1)).total_seconds())
-dend = int((datetime(2020,5,9,12,0,0)- datetime(1970,1,1)).total_seconds())
+dstart = int((datetime(2020,3,15,0,0,0)- datetime(1970,1,1)).total_seconds())
+dend = int((datetime(2020,5,15,0,0,0)- datetime(1970,1,1)).total_seconds())
 
 print(dstart)
 print(dend)
@@ -108,6 +108,7 @@ sensors' names:
 - SDI0 : solar radiation        [W/m2]
 - SDI1 : rain                   [mm/h]
 - SDI4: wind speed              [m/s]
+- SDI5: wind direction          [°]
 - SDI7 : air temperature        [°C]
 - SDI8: vapor pressure          [kPa]
 - SDI9 : atmospheric pressure   [kPa]
@@ -124,8 +125,11 @@ try:  # urlopen not usable with "with"
     url = "http://" + host + "/api/grafana/query"
     now = get_timestamp()
     print formatDateGMT(now)
-    gr = {'range': {'from': formatDateGMT(dstart), 'to': formatDateGMT(dend)}, \
-          'targets': [{'target': 'SDI0'}, {'target': 'SDI1'}, {'target': 'SDI4'}, {'target': 'SDI7'}, {'target': 'SDI8'}, {'target': 'SDI9'}, {'target': 'SDI10'}, {'target': 'VALVE3'},{'target': 'HUM7'}, {'target': 'HUM8'}, {'target': 'HUM9'}, {'target': 'SDI11'}]}
+    gr = {'range': {'from': formatDateGMT(dstart), 'to': formatDateGMT(dend)},
+          'targets': [{'target': 'SDI0'}, {'target': 'SDI1'}, {'target': 'SDI4'},
+                      {'target': 'SDI5'}, {'target': 'SDI7'}, {'target': 'SDI8'},
+                      {'target': 'SDI9'}, {'target': 'SDI10'}, {'target': 'VALVE3'},
+                      {'target': 'HUM7'}, {'target': 'HUM8'}, {'target': 'HUM9'}, {'target': 'SDI11'}]}
     data = json.dumps(gr)
     #print(data)
     dataFile = urllib.urlopen(url, data, 20)
@@ -152,15 +156,16 @@ if dataFile:
 index_SolRad = 0            # Global radiation
 index_Rain = 1          # Rainfall
 index_WindSpeed = 2     # Wind speed
-index_TempAir = 3          # Air temperature
-index_PressVap = 4            # Vapor pressure
-index_PressAtm = 5          # Atmospheric pressure
-index_HumRel = 6            # Relative humidity
-index_VALVE = 7         # Valve state
-index_HUM7 = 8
-index_HUM8 = 9
-index_HUM9 = 10
-index_TempHum = 11
+index_WindDirection = 3 # Wind direction
+index_TempAir = 4          # Air temperature
+index_PressVap = 5            # Vapor pressure
+index_PressAtm = 6          # Atmospheric pressure
+index_HumRel = 7            # Relative humidity
+index_VALVE = 8         # Valve state
+index_HUM7 = 9
+index_HUM8 = 10
+index_HUM9 = 11
+index_TempHum = 12
 
 # ------------------------------
 # Build lists
@@ -169,6 +174,7 @@ Time = []
 SolRad = []
 Rain = []
 WindSpeed = []
+WindDirection = []
 TempAir = []
 PressVap = []
 PressAtm = []
@@ -180,31 +186,39 @@ VALVE = []
 TempHum = []
 length_result = len(result[0].get('datapoints'))
 for i in range(0, length_result):
+    # Time
     Time.append(formatDateGMT(result[0].get('datapoints')[i][1]/1000))
-    """
+    # Meteorological data
     SolRad.append(result[0].get('datapoints')[i][0])
     Rain.append(result[1].get('datapoints')[i][0])
     WindSpeed.append(result[2].get('datapoints')[i][0])
-    TempAir.append(result[3].get('datapoints')[i][0])
-    PressVap.append(result[4].get('datapoints')[i][0])
-    PressAtm.append(result[5].get('datapoints')[i][0])
-    HumRel.append(result[6].get('datapoints')[i][0])
+    WindDirection.append(result[3].get('datapoints')[i][0])
+    TempAir.append(result[index_TempAir].get('datapoints')[i][0])
+    PressVap.append(result[index_PressVap].get('datapoints')[i][0])
+    PressAtm.append(result[index_PressAtm].get('datapoints')[i][0])
+    HumRel.append(result[index_HumRel].get('datapoints')[i][0])
+    # Humidity data
     HUM7.append(result[index_HUM7].get('datapoints')[i][0])
     HUM8.append(result[index_HUM8].get('datapoints')[i][0])
     HUM9.append(result[index_HUM9].get('datapoints')[i][0])
     TempHum.append(result[index_TempHum].get('datapoints')[i][0])
-    """
-    VALVE.append(result[index_VALVE].get('datapoints')[i][0])
-    Rain.append(result[1].get('datapoints')[i][0])
+    #VALVE.append(result[index_VALVE].get('datapoints')[i][0])
+    #Rain.append(result[index_Rain].get('datapoints')[i][0])
 print VALVE
 
 # Open file
-f = open("dataELSA.csv", "w")
+m = open("dataELSA_meteo.csv", "w")
+v = open("dataELSA_valve.csv", "w")
+r = open("dataELSA_rain.csv", "w")
 for i in range(0, length_result):
-#    f.write("{}{} {} {} {} {} {} {} {} {} {} {} {}\n".format(Time[i], SolRad[i], Rain[i], WindSpeed[i], TempAir[i], PressVap[i], PressAtm[i], HumRel[i], VALVE[i], HUM7[i], HUM8[i], HUM9[i], TempHum[i]))
-    f.write("{},{},{}\n".format(Time[i], VALVE[i], Rain[i]))
+    # Load all meteorological data
+    m.write("{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(Time[i], SolRad[i], Rain[i], WindSpeed[i], WindDirection[i], TempAir[i], PressVap[i], PressAtm[i], HumRel[i], HUM7[i], HUM8[i], HUM9[i], TempHum[i]))
+    # Load valve state and rain
+    #f.write("{};{};{}\n".format(Time[i], VALVE[i], Rain[i]))
 
-f.close()
+m.close()
+v.close()
+r.close()
 
 print dstart
 print dend

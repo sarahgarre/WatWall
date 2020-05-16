@@ -195,7 +195,7 @@ while (True):
             ET0 += (0.408 * delta * Rn + gamma * (0.625 / (273 + meteo[2][q])) * vitesse_du_vent * (es - ea)) / (delta + gamma * (1 + 0.34 * vitesse_du_vent))  # stocke la somme des ET0 calculés pour chaque minute
         print("ET0 des 24 dernières heures "+str (ET0)+" mm")
 
-        if 0<ET0<8:
+        if 0<ET0<9:
             print("Pan effectué : plan B")
             ETR = (ET0+supplement_ET0) * Kc  # valeur réelle de l'ETP en considérant le type et le stade de la culture
             V_irrigation = ETR * 10 ** (-2) * 10.5 # volume qui a été perdu par évapotranspiration

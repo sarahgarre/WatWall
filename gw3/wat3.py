@@ -7,7 +7,7 @@
 user = "GW3"
 # Place where the code should run
 #test = True     # True to run the code locally
-test = False    # False to implement the code on the server
+test = False   # False to implement the code on the server
 
 #_______________________________________________________________________________________________________________________
 # /!\ PARAMETERS /!\:
@@ -113,7 +113,7 @@ if dataFile:
 sensors used:   - HUM7 : first humidity sensor [V]
                 - HUM8 : second humidity sensor [V]
                 - HUM9 : third humidity sensor [V]
-                - SDI11 : humidity sensor temperature [°C]
+                - SDI7 : air temperature [°C]
 """
 print (
 """####################################
@@ -131,7 +131,7 @@ while (True):
         url = "http://" + host + "/api/grafana/query"
         now = get_timestamp()
         gr = {'range': {'from': formatDateGMT(now - (1 * 5 * 60)), 'to': formatDateGMT(now)}, \
-              'targets': [{'target': 'HUM7'}, {'target': 'HUM8'}, {'target': 'HUM9'}, {'target': 'SDI11'}]}
+              'targets': [{'target': 'HUM7'}, {'target': 'HUM8'}, {'target': 'HUM9'}, {'target': 'SDI7'}]}
         data = json.dumps(gr)
         #print(data)
         dataFile = urllib.urlopen(url, data, 20)
@@ -156,13 +156,13 @@ while (True):
     Vraw7 = []
     Vraw8 = []
     Vraw9 = []
-    TempHum = []
+    TempAir = []
     length_result = len(result[0].get('datapoints'))
     for i in range(0, length_result):
         Vraw7.append(result[0].get('datapoints')[i][0])
         Vraw8.append(result[1].get('datapoints')[i][0])
         Vraw9.append(result[2].get('datapoints')[i][0])
-        TempHum.append(result[3].get('datapoints')[i][0])
+        TempAir.append(result[3].get('datapoints')[i][0])
 
     print '__________________________________'
     print 'Humidity sensor readings (raw values)'
@@ -192,12 +192,12 @@ while (True):
     Vraw7_NaN = []
     Vraw8_NaN = []
     Vraw9_NaN = []
-    TempHum_NaN = []
+    TempAir_NaN = []
     for i in range(0, length_result):
         Vraw7_NaN.append(math.isnan(Vraw7[i]))
         Vraw8_NaN.append(math.isnan(Vraw8[i]))
         Vraw9_NaN.append(math.isnan(Vraw8[i]))
-        TempHum_NaN.append(math.isnan(TempHum[i]))
+        TempAir_NaN.append(math.isnan(TempAir[i]))
 
     print '__________________________________'
     print 'Presence of NaN values'
@@ -283,7 +283,7 @@ while (True):
     # f) Choose to use humidity sensors or not
 
     if conditionA.count(1) >= NbHumMin:
-        print("Plan A can be run")
+        print("=> Plan A can be run")
 
 # -----------------------------------------------------------------------------------------------------------------------
 # 1.1.3) Convert analogous signal [Volts] into volumetric water content [cm3/cm3] (if Plan A chosen)
@@ -336,9 +336,9 @@ while (True):
 # -----------------------------------------------------------------------------------------------------------------------
 # 1.1.4) Correct temperature influence on raw signal (if Plan A chosen)
         # Condition: no NaN values in the humidity sensor temperature array
-        if all(x == False for x in TempHum_NaN):
+        if all(x == False for x in TempAir_NaN):
 
-            def correctTemp(VWC, TempHum, sensor):
+            def correctTemp(VWC, TempAir, sensor):
                 '''
                 correctTemp corrects VWC  with sensor temperature
                 Source: Cobos, Doug, Colin Campbell, and Decagon Devices. n.d. “Correcting Temperature Sensitivity of
@@ -346,7 +346,7 @@ while (True):
                 ------
                 Input:
                 VWC: humidity sensor readings array                     [V]
-                TempHum: humidity sensor temperature array              [°C]
+                TempAir: air temperature array                          [°C]
                 sensor: sensor name
                     - HUM7
                     - HUM8
@@ -356,25 +356,25 @@ while (True):
                 VWC_corrected: corrected VWC array                      [cm3/cm3]
                 ------
                 Equation:
-                VWC_corrected = C1* VWC + C2 * TempHum + C3
+                VWC_corrected = C1* VWC + C2 * TempAir + C3
                 '''
 
                 if sensor =='HUM7':
-                    C = [0.64901671, 0.00012377, 0.09066688]
+                    C = [0.673092668753705, 0.000174348978687542, 0.0840794823052036]
                 elif sensor =='HUM8':
-                    C = [0.07814108, -0.000083522780146606, 0.192687225877584]
+                    C = [0.0326500322594179, -0.000130977585771525, 0.202491414445767]
                 elif sensor =='HUM9':
-                    C = [0.48481775900692, -0.0000513649086714088, 0.130409337555332]
+                    C = [0.491143905041849, -0.0000577534352700035, 0.128819057287295]
 
-                VWC_corrected = C[0] * VWC + C[1] * TempHum + C[2]
+                VWC_corrected = C[0] * VWC + C[1] * TempAir + C[2]
 
                 return VWC_corrected
 
             # Calculation
             for i in range(0, length_result):
-                VWC7[i] = correctTemp(VWC7[i], TempHum[i], 'HUM7')
-                VWC8[i] = correctTemp(VWC8[i], TempHum[i], 'HUM8')
-                VWC9[i] = correctTemp(VWC9[i], TempHum[i], 'HUM9')
+                VWC7[i] = correctTemp(VWC7[i], TempAir[i], 'HUM7')
+                VWC8[i] = correctTemp(VWC8[i], TempAir[i], 'HUM8')
+                VWC9[i] = correctTemp(VWC9[i], TempAir[i], 'HUM9')
 
             print'__________________________________'
             print'Volumetric water content: temperature correction'
@@ -385,7 +385,7 @@ while (True):
         else:
             print'__________________________________'
             print'Volumetric water content: temperature correction'
-            print 'NaN detected : TempHum can not be used'
+            print 'NaN detected : TempAir can not be used'
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -406,34 +406,85 @@ while (True):
         print 'Mean water content [cm3/cm3]:', theta_mean
 
         # Parameters
-        A = 1920  # box area [cm2]
-        H = 12  # box eight [cm]
-        Q = 1000  # discharge [cm3/hr]
+        if irrig_syst == 'pot':
+            A_tot = 1920    # box area                      [cm2]
+            H_tot = 12      # box height                    [cm]
+            Q_tot = 1000    # discharge in the main pipe    [cm3/hr]
 
-        theta_fc7 = 0.285  # water content at field capacity in the medium of the sensor HUM7 [cm3/cm3]
-        theta_fc8 = 0.225  # water content at field capacity in the medium of the sensor HUM8 [cm3/cm3]
-        theta_fc9 = 0.27  # water content at field capacity in the medium of the sensor HUM9 [cm3/cm3]
+            # Heigth
+            H7 = H_tot  # height of the first zone          [cm]
+            H8 = H_tot  # height of the second zone         [cm]
+            H9 = H_tot  # height of the third zone          [cm]
+            H = [H7, H8, H9]  # zone height array           [cm]
 
-        # Water content at field capacity
-        theta_fc = [theta_fc7, theta_fc8, theta_fc9]  # water content at field capacity in the box [cm3/cm3]
+            # Area of each box zone
+            # Each sensor is expected to cover the same horizontal area
+            A7 = A_tot/3  # height of the first zone        [cm]
+            A8 = A_tot/3  # height of the second zone       [cm]
+            A9 = A_tot/3  # height of the third zone        [cm]
+            A = [A7, A8, A9]  # zone area array             [cm]
+
+            # Discharge in pipes
+            # Discharge is considered identical in the three zones
+            Q7 = Q_tot/3  # discharge in the first zone     [cm3/hr]
+            Q8 = Q_tot/3  # discharge in the second zone    [cm3/hr]
+            Q9 = Q_tot/3  # discharge in the third zone     [cm3/hr]
+            Q = [Q7, Q8, Q9]  # discharge array             [cm3/hr]
+
+            # Water content at field capacity
+            theta_fc7 = 0.285  # water content at field capacity in the first zone                  [cm3/cm3]
+            theta_fc8 = 0.225  # water content at field capacity in the first zone                  [cm3/cm3]
+            theta_fc9 = 0.27  # water content at field capacity in the first zone                   [cm3/cm3]
+            theta_fc = [theta_fc7, theta_fc8, theta_fc9]  # water content at field capacity array   [cm3/cm3]
+
+        elif irrig_syst == 'greenwall':
+            A_tot = 2200 * 13   # wall area                 [cm2]
+            H_tot = 107         # wall height               [cm]
+
+            # Heigth
+            # The wall is divided into three layers
+            H7 = 30     # height of the top layer           [cm]
+            H8 = 30     # height of the intermediary layer  [cm]
+            H9 = 37     # height of the bottom layer        [cm]
+            H = [H7, H8, H9]      # layer height array      [cm]
+
+            # Area
+            A7 = A_tot  # area of the top layer             [cm2]
+            A8 = A_tot  # area of the intermediary layer    [cm2]
+            A9 = A_tot  # area of the bottom layer          [cm2]
+            A = [A7, A8, A9]  # layer height array          [cm2]
+
+            # Discharge in pipes
+            Q7 = 432000          # discharge in the top layer           [cm3/hr]
+            Q8 = 446400          # discharge in the intermediary layer  [cm3/hr]
+            Q9 = 460800          # discharge in the bottom layer        [cm3/hr]
+            Q = [Q7, Q8, Q9]     # discharge array                      [cm3/hr]
+
+            # Water content at field capacity
+            theta_fc7 = 0.285   # water content at field capacity in the first layer                [cm3/cm3]
+            theta_fc8 = 0.285   # water content at field capacity in the intermediary layer         [cm3/cm3]
+            theta_fc9 = 0.285   # water content at field capacity in the bottom layer               [cm3/cm3]
+            theta_fc = [theta_fc7, theta_fc8, theta_fc9]  # water content at field capacity array   [cm3/cm3]
+
         print 'Water content at field capacity [cm3/cm3]:', theta_fc
 
         # Irrigation time => Water needs in the three layers
         time_irrig = []
         for i in range(0, len(theta_fc)):
-            vol = (theta_fc[i] - theta_mean[i]) * A * H  # Irrigation volume [cm3]
+            vol = (theta_fc[i] - theta_mean[i]) * A[i] * H[i]  # Irrigation volume [cm3]
             if vol < 0:
                 time_irrig.append(0)
             else:
-                time_irrig.append(int(vol / Q * 3600))  # Irrigation time [s]
+                time_irrig.append(int(vol / Q[i] * 3600))  # Irrigation time [s]
             del vol
 
         # Find the maximal irrigation time
-        index_OK = [f for f, e in enumerate(conditionA) if e == 1]
-        time_irrigOK = []
+        index_OK = [f for f, e in enumerate(conditionA) if e == 1]  # Index of the sensor that meet the conditions
+        time_irrigOK = []                                           # Initialization
         for i in range(0, len(index_OK)):
-            time_irrigOK.append(time_irrig[index_OK[i]])
-        index_max = time_irrigOK.index(max(time_irrigOK))
+            time_irrigOK.append(time_irrig[index_OK[i]])            # Irrigation time corresponding to sensor that meets the conditions
+
+        index_max = time_irrigOK.index(max(time_irrigOK))           # Index of the maximal irrigation time
 
         # Irrigation
         timestamp = get_timestamp()
@@ -723,9 +774,14 @@ while (True):
             ET0 = (0.408 * delta * Rn + gamma * cst / (T + 273) * u * (e_sat - e_a)) / (delta + gamma * (1 + 0.34 * u))
             print 'ET0 =', ET0, 'mm/day'
 
-            # ETc
-            Kc = 0.5  # cultural coefficient [-]
-            ET = Kc * ET0 / 10  # Daily evapotranspiration [cm/day]
+            # Kc
+            if irrig_syst == 'pot':
+                Kc = 0.5    # cultural coefficient of rocket [-]
+            elif irrig_syst == 'greenwall':
+                Kc = 0.6    # global cultural coefficient of the wall [-]
+
+            # Etc
+            ET = Kc * ET0    # Daily evapotranspiration [mm/day]
             print 'ETc =', ET, 'mm/day'
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -734,20 +790,85 @@ while (True):
             print'__________________________________'
             print'Irrigation'
 
-            # Parameters
-            A = 1920  # box area [cm2]
-            Q = 1000  # discharge [cm3/hr]
+            if irrig_syst == 'pot':
+                # Parameters
+                A_rain_tot = 1920   # rainfall area                                 [cm2]
+                A_ET_tot = A_rain_tot   # ET area                                   [cm2]
+                Q_tot = 1000    # discharge in the main pipe                        [cm3/hr]
 
-            # Watering time
-            time_irrig = int((ET - P / 10) * A / Q * 60 * 60)  # Daily watering time [sec] based on ET [cm] and P [cm]
-            print'time_irrig=', time_irrig, 'seconds'
+                # Rainfall area
+                A_rain7 = A_rain_tot/3  # rainfall area of the first zone           [cm2]
+                A_rain8 = A_rain_tot/3  # rainfall area of the second zone          [cm2]
+                A_rain9 = A_rain_tot/3  # rainfall area of the third zone           [cm2]
+                A_rain = [A_rain7, A_rain8, A_rain9]  # zone rainfall area array    [cm2]
+
+                # ET area
+                A_ET7 = A_ET_tot / 3  # ET area of the first zone                   [cm2]
+                A_ET8 = A_ET_tot / 3  # ET area of the second zone                  [cm2]
+                A_ET9 = A_ET_tot / 3  # ET area of the third zone                   [cm2]
+                A_ET = [A_ET7, A_ET8, A_ET9]  # zone ET area array                  [cm2]
+
+                # Discharge in pipes
+                # Discharge is considered identical in the three zones
+                Q7 = Q_tot / 3  # discharge in the first zone                       [cm3/hr]
+                Q8 = Q_tot / 3  # discharge in the second zone                      [cm3/hr]
+                Q9 = Q_tot / 3  # discharge in the third zone                       [cm3/hr]
+                Q = [Q7, Q8, Q9]  # discharge array                                 [cm3/hr]
+
+            elif irrig_syst == 'greenwall':
+                # Parameters
+                A_rain_tot = 220*13    # rainfall area (top)                            [cm2]
+                A_cell = 10 * 10    # wall cell area                                    [cm2]
+                cell_Nb = 26 * 10   # wall cell number                                  [cm2]
+                A_ET_tot = A_rain_tot + A_cell*cell_Nb   # ET area                      [cm2]
+                H_tot = 107    # wall height                                            [cm]
+
+                # Rainfall area
+                A_rain7 = A_rain_tot      # rainfall area of the top layer              [cm2]
+                A_rain8 = 0               # rainfall area of the intermediary layer     [cm2]
+                A_rain9 = 0               # rainfall area of the bottom layer           [cm2]
+                A_rain = [A_rain7, A_rain8, A_rain9]  # layer rainfall area array       [cm2]
+
+                # Heigth
+                # The wall is divided into three layers
+                H7 = 30  # height of the top layer                                      [cm]
+                H8 = 30  # height of the intermediary layer                             [cm]
+                H9 = 37  # height of the bottom layer                                   [cm]
+                H = [H7, H8, H9]  # layer height array                                  [cm]
+
+                # ET area
+                A_ET7 = A_ET_tot * H7/H_tot     # ET area of the top layer              [cm2]
+                A_ET8 = A_ET_tot * H8/H_tot     # ET area of the intermediary layer     [cm2]
+                A_ET9 = A_ET_tot * H9/H_tot     # ET area of the bottom layer           [cm2]
+                A_ET = [A_ET7, A_ET8, A_ET9]       # layer ET area array                   [cm2]
+
+                # Discharge in pipes
+                Q7 = 432000  # discharge in the top layer                               [cm3/hr]
+                Q8 = 446400  # discharge in the intermediary layer                      [cm3/hr]
+                Q9 = 460800  # discharge in the bottom layer                            [cm3/hr]
+                Q = [Q7, Q8, Q9]  # discharge array                                     [cm3/hr]
+
+            # Irrigation time => Water needs in the three layers
+            time_irrig = []
+            for i in range(0, len(Q)):
+                vol = ET/10 * A_ET[i] - P/10 * A_rain[i]                       # Irrigation volume [cm3]
+                if vol < 0:
+                    time_irrig.append(0)
+                else:
+                    time_irrig.append(int(vol / Q[i] * 3600))  # Irrigation time [s]
+                del vol
+
+            # Find the maximal irrigation time
+            index_max = time_irrig.index(max(time_irrig))  # Index of the maximal irrigation time
 
             # Valve command
             timestamp = get_timestamp()
             # erase the current file and open the valve in 30 seconds
             open("valve.txt", 'w').write(str(timestamp + 30) + ";1\n")
             # append to the file and close the valve time_irrig later
-            open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig) + ";0\n")
+            open("valve.txt", 'a').write(str(timestamp + 30 + time_irrig[index_max]) + ";0\n")
+            print 'Open the valve for', time_irrig[index_max], 'seconds'
+
             print("valve.txt ready.")
 
             # Record action
@@ -767,10 +888,56 @@ while (True):
             print 'PLAN C'
             print '####################################'
 
-            # Parameters
-            A = 1920  # box area [cm2]
-            Q = 1000  # discharge [cm3/hr]
-            Kc = 0.5  # cultural coefficient [-]
+            # Kc
+            if irrig_syst == 'pot':
+                Kc = 0.5  # cultural coefficient of rocket [-]
+            elif irrig_syst == 'greenwall':
+                Kc = 0.6  # global cultural coefficient of the wall [-]
+
+            # Discharge and surfaces
+            if irrig_syst == 'pot':
+                # Parameters
+                A_ET_tot = 1920   # ET area                                         [cm2]
+                Q_tot = 1000    # discharge in the main pipe                        [cm3/hr]
+
+                # ET area
+                A_ET7 = A_ET_tot / 3  # ET area of the first zone                   [cm2]
+                A_ET8 = A_ET_tot / 3  # ET area of the second zone                  [cm2]
+                A_ET9 = A_ET_tot / 3  # ET area of the third zone                   [cm2]
+                A_ET = [A_ET7, A_ET8, A_ET9]  # zone ET area array                  [cm2]
+
+                # Discharge in pipes
+                # Discharge is considered identical in the three zones
+                Q7 = Q_tot / 3  # discharge in the first zone                       [cm3/hr]
+                Q8 = Q_tot / 3  # discharge in the second zone                      [cm3/hr]
+                Q9 = Q_tot / 3  # discharge in the third zone                       [cm3/hr]
+                Q = [Q7, Q8, Q9]  # discharge array                                 [cm3/hr]
+
+            elif irrig_syst == 'greenwall':
+                # Parameters
+                A_cell = 10 * 10    # wall cell area                                    [cm2]
+                cell_Nb = 26 * 10   # wall cell number                                  [cm2]
+                A_ET_tot = 220 * 13 + A_cell*cell_Nb   # ET area                        [cm2]
+                H_tot = 107    # wall height                                            [cm2]
+
+                # Heigth
+                # The wall is divided into three layers
+                H7 = 30  # height of the top layer                                      [cm]
+                H8 = 30  # height of the intermediary layer                             [cm]
+                H9 = 37  # height of the bottom layer                                   [cm]
+                H = [H7, H8, H9]  # layer height array                                  [cm]
+
+                # ET area
+                A_ET7 = A_ET_tot * H7/H_tot     # ET area of the top layer              [cm2]
+                A_ET8 = A_ET_tot * H8/H_tot     # ET area of the intermediary layer     [cm2]
+                A_ET9 = A_ET_tot * H9/H_tot     # ET area of the bottom layer           [cm2]
+                A_ET = [A_ET7, A_ET8, A_ET9]    # layer ET area array                   [cm2]
+
+                # Discharge in pipes
+                Q7 = 432000  # discharge in the top layer                               [cm3/hr]
+                Q8 = 446400  # discharge in the intermediary layer                      [cm3/hr]
+                Q9 = 460800  # discharge in the bottom layer                            [cm3/hr]
+                Q = [Q7, Q8, Q9]  # discharge array                                     [cm3/hr]
 
             # ET0 file of Gembloux
             file = open("ET0_2010_2019.csv", "r")  # open the file
@@ -792,21 +959,36 @@ while (True):
                 epoch = int(time.mktime(time.strptime(hiredate, pattern)))  # convert date to epoch time
                 #print epoch
 
-                # Calculate irrigation time
-                ET0 = float(row[1])  # Daily reference evapotranspiration [mm/day]
-                ET = Kc * ET0 / 10  # Daily evapotranspiration [cm/day]
-                time_irrig = int(ET * A / Q * 60 * 60)  # Daily watering time based on ET [sec]
+                # Get ET0
+                ET0 = float(row[1])     # Daily reference evapotranspiration        [mm/day]
 
-                # open the valve the next day (+ 24*60*60) at 00:00
+                # Compute ETc
+                ET = Kc * ET0           # Daily evapotranspiration                  [mm/day]
+
+                # Irrigation time => Water needs in the three layers
+                time_irrig = []
+                for i in range(0, len(theta_fc)):
+                    vol = ET / 10 * A_ET[i]  # Irrigation volume                    [cm3]
+                    if vol < 0:
+                        time_irrig.append(0)
+                    else:
+                        time_irrig.append(int(vol / Q[i] * 3600))  # Irrigation time [s]
+                    del vol
+
+                # Find the maximal irrigation time
+                index_max = time_irrig.index(max(time_irrig))  # Index of the maximal irrigation time
+
+                # open the valve
                 outfile.write(str(epoch + 24 * 60 * 60) + ";1\n")
                 # append to the file and close the valve the next day (+ 24*60*60) at 00:00 + time_irrig
-                outfile.write(str(epoch + 24 * 60 * 60 + time_irrig) + ";0\n")
+                outfile.write(str(epoch + 24 * 60 * 60 + time_irrig[index_max]) + ";0\n")
 
             outfile.close()  # close valve.txt
             print("valve.txt ready.")
             file.close()  # close the file
 
             # Record action
+            timestamp = get_timestamp()
             if os.path.isfile('history.txt'):   # If file history.txt already exists
                 open("history.txt", 'a').write(str(timestamp) + ";C\n")      # Fill file
             else:                               # If file history.txt does not exist
