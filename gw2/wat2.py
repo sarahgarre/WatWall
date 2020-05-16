@@ -13,6 +13,8 @@ import traceback
 import urllib2 as urllib
 
 ##############################################################################
+#                            Program settings                                #
+##############################################################################
 # Please enter the hour at which program is launched on the server :
 hour = 16
 minute = 25
@@ -21,51 +23,42 @@ minute = 25
 test = False
 Delay = True
 ##############################################################################
-
-##################################
-#        Program settings        #
-##################################
-
-# Discharge Q[L/min]
+# Discharge of the porous hose network Q[L/min] :
 Q = 1.5 / 60
-
-# Calibration parameters
+##############################################################################
+# Calibration parameters :
 m_calib = 96
 p_calib = - 30
-
-# Number of successive values to consider
+##############################################################################
+## QUALITY CHECK
+# Number of successive values to consider :
 N = 5
-
-# Admissible std for environmental param
-
+# Admissible max std for environmental param :
 LIM_Rn = 322.5866
 LIM_Thr = 2.8370
 LIM_u2 = 1.231
 LIM_P = 0.0678
-
-# Admissible std for environmental param
+# Admissible max std for WC probes  :
 LIM_HUM4 = 0.1131
 LIM_HUM5 = 0.1340
 LIM_HUM6 = 0.1135
 #TODO compute std space
 LIM_HUM456 = 1
-
-# Minimum water content admissible
+##############################################################################
+## IRRIGATION DECISION
+# Minimum water content admissible :
 Water_Content_Limit = 30
-
 # Crop coefficient
 Kl = 0.7
-
-# Waiting time between first irrigation and post-irrig check
+# Waiting time between first irrigation and post-irrig check :
 waiting_time = 3600 * 2
-
-# Default irrigation time (in seconds !)
+# Default irrigation time [seconds] :
 default_irrig = 60 * 30
-
-# Dimensions of the pot/module [m2]
+# Dimensions of the pot/module [m2] :
 Area = 0.75 * 0.14
-# Volume of the pot/module [L]
+# Volume of the pot/module [L] :
 Pot_volume = 12.6
+##############################################################################
 
 ##########################################
 #    COMMUNICATION PROTOCOLS settings    #
@@ -145,10 +138,10 @@ print 'Here is the list of all the input setting of the script :'
 print '========================================================='
 print ''
 print '* The discharge of the drip pipe :', round(Q, 2), 'L/min'
-print '* The number of successive measures used for data quatily check :', int(N)
+print '* The number of successive measures used for data quality check :', int(N)
 print '* The minimum admissible water content :', int(Water_Content_Limit), '%'
 print '* The landscape coefficient Kl', round(Kl, 2), '-'
-print '* The delay between first irrigation and post irrigation check : ', int(waiting_time/60), 'minute"'
+print '* The delay between first irrigation and post irrigation check : ', int(waiting_time/60), 'minutes'
 print '* The surface of the module :', round(Area, 2), 'm2'
 print '* The volume of the module :', round(Pot_volume, 2), 'L'
 print '* The admissible standard deviation for the sensors over time :'
@@ -159,7 +152,7 @@ print '    * Rn     :', round(LIM_Rn, 2)
 print '    * Thr    :', round(LIM_Thr, 2)
 print '    * u2     :', round(LIM_u2, 2)
 print '    * P      :', round(LIM_P, 2)
-print '* The admissible standard deviation for the sensors over time :'
+print '* The admissible standard deviation for the sensors over space :'
 print '    * HUM456 :', round(LIM_HUM456,2)
 
 
@@ -173,9 +166,9 @@ print '    * HUM456 :', round(LIM_HUM456,2)
 while (True):
 
     print ''
-    print '==========================================================================================================='
-    print '=                    A new day of irrigation management of the WattWall starts                            ='
-    print '==========================================================================================================='
+    print '==============================================================================='
+    print '=         A new day of irrigation management of the WattWall starts           ='
+    print '==============================================================================='
 
     timestamp = get_timestamp()
     print 'Today is', time.strftime('%A %d %B %Y', time.localtime(timestamp))
@@ -510,7 +503,7 @@ while (True):
         print''
         print "Recorded weather data for the last 24h :"
         print "========================================"
-        print "   * Total radiation was :            ", round(sum(SommeRn), 2),   " MJ/(m2 hour)"
+        print "   * Total radiation was :            ", round(sum(SommeRn), 2),   " MJ/(m2 day)"
         print "   * Mean temperature was :           ",round(sum(Thr)/24, 2),     " degree C"
         print "   * Mean vapor pressure was :        ",round(sum(ea)/24, 2),      " kPa"
         print "   * Mean wind speed for was :        ",round(sum(u2)/24, 2),      " m/s"
@@ -729,7 +722,7 @@ while (True):
                 open("valve.txt", 'a').write(str(timestamp + 30) + ";1\n")
                 # append to the file and close the valve X minute later
                 open("valve.txt", 'a').write(str(timestamp + int(t) + 30) + ";0\n")
-                print("* Extra watering has been programed")
+                print("* Extra watering has been programmed")
             else:
                 print('* This is sufficient, no extra watering is needed')
         else:
