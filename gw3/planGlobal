@@ -947,7 +947,7 @@ while (True):
             next(reader)
             next(reader)
 
-            outfile = open('valve.txt', 'w')
+            outfile = open('valve.txt', 'a')
 
             # Transform date into epoch time
             for row in reader:  # loop to go through the reader

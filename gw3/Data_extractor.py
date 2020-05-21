@@ -13,8 +13,8 @@ import traceback
 import urllib2 as urllib
 import csv # module for csv files
 
-dstart = int((datetime(2020,3,15,0,0,0)- datetime(1970,1,1)).total_seconds())
-dend = int((datetime(2020,5,15,0,0,0)- datetime(1970,1,1)).total_seconds())
+dstart = int((datetime(2020,5,7,0,0,0)- datetime(1970,1,1)).total_seconds())
+dend = int((datetime(2020,5,18,0,0,0)- datetime(1970,1,1)).total_seconds())
 
 print(dstart)
 print(dend)
@@ -202,8 +202,8 @@ for i in range(0, length_result):
     HUM8.append(result[index_HUM8].get('datapoints')[i][0])
     HUM9.append(result[index_HUM9].get('datapoints')[i][0])
     TempHum.append(result[index_TempHum].get('datapoints')[i][0])
-    #VALVE.append(result[index_VALVE].get('datapoints')[i][0])
-    #Rain.append(result[index_Rain].get('datapoints')[i][0])
+    VALVE.append(result[index_VALVE].get('datapoints')[i][0])
+    Rain.append(result[index_Rain].get('datapoints')[i][0])
 print VALVE
 
 # Open file
@@ -212,7 +212,10 @@ v = open("dataELSA_valve.csv", "w")
 r = open("dataELSA_rain.csv", "w")
 for i in range(0, length_result):
     # Load all meteorological data
-    m.write("{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(Time[i], SolRad[i], Rain[i], WindSpeed[i], WindDirection[i], TempAir[i], PressVap[i], PressAtm[i], HumRel[i], HUM7[i], HUM8[i], HUM9[i], TempHum[i]))
+    m.write("{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(Time[i], SolRad[i], Rain[i], WindSpeed[i],
+                                                                 WindDirection[i], TempAir[i], PressVap[i],
+                                                                 PressAtm[i], HumRel[i], HUM7[i], HUM8[i], HUM9[i],
+                                                                 TempHum[i], VALVE[i]))
     # Load valve state and rain
     #f.write("{};{};{}\n".format(Time[i], VALVE[i], Rain[i]))
 

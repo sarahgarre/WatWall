@@ -939,7 +939,7 @@ while (True):
                 Q9 = 460800  # discharge in the bottom layer                            [cm3/hr]
                 Q = [Q7, Q8, Q9]  # discharge array                                     [cm3/hr]
 
-            # ET0 file of Gembloux
+            # ET0 file of Ernage
             file = open("ET0_2010_2019.csv", "r")  # open the file
             reader = csv.reader(file, delimiter=";")  # file reading initialization
 
@@ -947,7 +947,7 @@ while (True):
             next(reader)
             next(reader)
 
-            outfile = open('valve.txt', 'w')
+            outfile = open('valve.txt', 'a')
 
             # Transform date into epoch time
             for row in reader:  # loop to go through the reader
